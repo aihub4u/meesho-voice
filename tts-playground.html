@@ -153,6 +153,33 @@ textarea#script:focus{border-color:var(--accent);}
 @keyframes wave{0%,100%{transform:scaleY(1);opacity:.7;}50%{transform:scaleY(.35);opacity:1;}}
 
 /* ══ BULK TAB ══ */
+/* ── Tanla settings ── */
+.tanla-card{background:var(--surface);border:1.5px solid #C8C3F5;border-radius:var(--rl);padding:18px 20px;margin-bottom:14px;}
+.tanla-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--accent-d);margin-bottom:12px;display:flex;align-items:center;gap:7px;}
+.tanla-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.t-field label{font-size:11px;font-weight:600;color:var(--ink2);display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:.04em;}
+.t-field input{width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:var(--r);font-size:13px;font-family:system-ui;color:var(--ink);background:var(--bg);outline:none;transition:border-color .15s;box-sizing:border-box;}
+.t-field input:focus{border-color:var(--accent);}
+.t-field input::placeholder{color:var(--ink3);}
+/* ── Phase progress ── */
+.phase-row{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--border);}
+.phase-row:last-child{border-bottom:none;}
+.phase-num{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;background:var(--border);color:var(--ink2);}
+.phase-num.active{background:var(--accent);color:#fff;}
+.phase-num.done{background:var(--green);color:#fff;}
+.phase-label{font-size:13px;font-weight:600;color:var(--ink);flex:1;}
+.phase-sub{font-size:11px;color:var(--ink3);}
+/* ── Campaign status card ── */
+.camp-status{background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);padding:16px 18px;margin-bottom:14px;display:none;}
+.camp-status.show{display:block;}
+.camp-stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:12px;}
+.camp-stat{text-align:center;padding:10px 6px;border-radius:var(--r);background:var(--bg);}
+.camp-stat-val{font-size:22px;font-weight:700;}
+.camp-stat-lbl{font-size:11px;color:var(--ink3);margin-top:2px;}
+/* ── Row status extended ── */
+.sb-dispatched{background:#E0F2FE;color:#0369A1;}
+.sb-calling{background:#F0EFF9;color:var(--accent);}
+
 .col-spec{background:var(--accent-l);border:1px solid #C8C3F5;border-radius:var(--r);padding:12px 16px;margin-bottom:14px;}
 .col-spec-title{font-size:11px;font-weight:700;color:var(--accent-d);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;}
 .col-spec-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;}
@@ -352,12 +379,44 @@ audio.mini{height:28px;width:170px;vertical-align:middle;}
   <!-- ══════════════ TAB 2: BULK ══════════════ -->
   <div class="tab-pane" id="tab-bulk">
 
-    <div class="info-note">
-      💡 The script template, voice, and audio quality you set in the <strong>Script tester</strong> tab are used for all generated recordings here.
-      <span id="bulkVoiceInfo" style="display:block;margin-top:4px;font-weight:600;"></span>
+    <!-- Info strip -->
+    <div class="info-note" id="bulkInfoNote">
+      💡 Script, voice &amp; quality from <strong>Script tester</strong> tab apply here.
+      <span id="bulkVoiceInfo" style="display:block;margin-top:4px;font-weight:600;color:var(--accent-d);"></span>
     </div>
 
-    <!-- Column spec -->
+    <!-- ── Tanla API settings ── -->
+    <div class="tanla-card">
+      <div class="tanla-title">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        Tanla / Karix campaign settings
+      </div>
+      <div class="tanla-grid">
+        <div class="t-field">
+          <label>Tanla access key</label>
+          <input type="password" id="tanlaKey" placeholder="Your access_key from Tanla"/>
+        </div>
+        <div class="t-field">
+          <label>DID number</label>
+          <input type="text" id="tanlaDID" placeholder="919010082954"/>
+        </div>
+        <div class="t-field">
+          <label>Username</label>
+          <input type="text" id="tanlaUser" placeholder="Meesho"/>
+        </div>
+        <div class="t-field">
+          <label>CORS proxy URL</label>
+          <input type="text" id="tanlaProxy" placeholder="https://your-proxy.workers.dev"/>
+        </div>
+      </div>
+      <div style="margin-top:10px;font-size:12px;color:var(--ink3);line-height:1.6;">
+        ⚡ <strong>CORS proxy needed?</strong> Browsers can't call hvms1.tanla.com directly.
+        Deploy a free Cloudflare Worker that forwards requests — takes 2 min.
+        <a href="#" onclick="showProxyHelp();return false;" style="color:var(--accent);font-weight:600;">Setup guide ↗</a>
+      </div>
+    </div>
+
+    <!-- ── Column spec ── -->
     <div class="col-spec">
       <div class="col-spec-title">Required CSV columns</div>
       <div class="col-spec-grid">
@@ -366,10 +425,10 @@ audio.mini{height:28px;width:170px;vertical-align:middle;}
         <div><span class="ctag">store_name</span> <span class="cdesc">Used as {store_name}</span></div>
         <div><span class="ctag">pickup_timings</span> <span class="cdesc">Used as {pickup_timings}</span></div>
       </div>
-      <div style="margin-top:9px;font-size:12px;color:var(--ink2);">Any extra column becomes a <span class="ctag">{variable}</span> you can use in your script.</div>
+      <div style="margin-top:9px;font-size:12px;color:var(--ink2);">Any extra column auto-becomes a <span class="ctag">{variable}</span> in your script.</div>
     </div>
 
-    <!-- Drop zone -->
+    <!-- ── CSV upload ── -->
     <div class="drop-zone" id="dropZone"
       onclick="document.getElementById('csvInput').click()"
       ondragover="event.preventDefault();this.classList.add('over')"
@@ -389,32 +448,122 @@ audio.mini{height:28px;width:170px;vertical-align:middle;}
     <!-- CSV errors -->
     <div id="csvErr" style="display:none;background:var(--red-l);border:1px solid #FECACA;border-radius:var(--r);padding:11px 14px;margin-bottom:14px;font-size:13px;color:var(--red);"></div>
 
-    <!-- Preview + generate -->
+    <!-- ── Campaign status card ── -->
+    <div class="camp-status" id="campStatus">
+      <div style="font-size:13px;font-weight:700;color:var(--ink);margin-bottom:10px;">Campaign progress</div>
+
+      <!-- Phase indicators -->
+      <div style="margin-bottom:12px;">
+        <div class="phase-row">
+          <div class="phase-num" id="ph1num">1</div>
+          <div>
+            <div class="phase-label">Generate personalised audio</div>
+            <div class="phase-sub" id="ph1sub">Sarvam AI creates one WAV per contact</div>
+          </div>
+          <span class="sbadge" id="ph1badge" style="display:none;"></span>
+        </div>
+        <div class="phase-row">
+          <div class="phase-num" id="ph2num">2</div>
+          <div>
+            <div class="phase-label">Dispatch calls via Tanla</div>
+            <div class="phase-sub" id="ph2sub">Each WAV + single-row CSV sent to Tanla</div>
+          </div>
+          <span class="sbadge" id="ph2badge" style="display:none;"></span>
+        </div>
+      </div>
+
+      <!-- Overall progress bar -->
+      <div class="bulk-prog-wrap" style="margin:0 0 10px;">
+        <div class="bulk-prog-bar"><div class="bulk-prog-fill" id="bulkProgFill"></div></div>
+        <div class="bulk-stats">
+          <span>🎙 Audio: <b id="sAudio">0</b></span>
+          <span>📞 Dispatched: <b id="sDispatched">0</b></span>
+          <span>⏳ Left: <b id="sLeft">0</b></span>
+          <span>❌ Errors: <b id="sErr">0</b></span>
+        </div>
+      </div>
+
+      <!-- Summary stat cards -->
+      <div class="camp-stat-grid" id="campStatGrid" style="display:none;">
+        <div class="camp-stat">
+          <div class="camp-stat-val" id="totalStat" style="color:var(--accent);">0</div>
+          <div class="camp-stat-lbl">Total</div>
+        </div>
+        <div class="camp-stat">
+          <div class="camp-stat-val" id="dispatchedStat" style="color:var(--green);">0</div>
+          <div class="camp-stat-lbl">Dispatched</div>
+        </div>
+        <div class="camp-stat">
+          <div class="camp-stat-val" id="audioErrStat" style="color:var(--amber);">0</div>
+          <div class="camp-stat-lbl">Audio errors</div>
+        </div>
+        <div class="camp-stat">
+          <div class="camp-stat-val" id="callErrStat" style="color:var(--red);">0</div>
+          <div class="camp-stat-lbl">Call errors</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Contact table ── -->
     <div id="csvPreview" style="display:none;">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
         <div style="font-size:14px;font-weight:700;" id="rowCount"></div>
-        <button class="btn-sec" style="padding:5px 12px;font-size:12px;" onclick="clearCSV()">✕ Clear</button>
+        <div style="display:flex;gap:8px;">
+          <button class="btn-sec" style="padding:5px 12px;font-size:12px;" id="dlAllBtn" style="display:none;" onclick="dlAll()">↓ Download WAVs</button>
+          <button class="btn-sec" style="padding:5px 12px;font-size:12px;" onclick="dlReport()">↓ Report CSV</button>
+          <button class="btn-sec" style="padding:5px 12px;font-size:12px;" onclick="clearCSV()">✕ Clear</button>
+        </div>
       </div>
 
       <div class="tbl-wrap">
         <table class="csv-tbl" id="csvTbl"></table>
       </div>
 
-      <div id="bulkProgWrap" style="display:none;" class="bulk-prog-wrap">
-        <div class="bulk-prog-bar"><div class="bulk-prog-fill" id="bulkProgFill"></div></div>
-        <div class="bulk-stats">
-          <span>✅ Done: <b id="sDone">0</b></span>
-          <span>⏳ Left: <b id="sLeft">0</b></span>
-          <span>❌ Errors: <b id="sErr">0</b></span>
-        </div>
-      </div>
-
       <div class="btn-row" style="margin-top:14px;">
         <button class="btn-pri" id="bulkBtn" onclick="startBulk()">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-          Generate all voice recordings
+          Generate &amp; launch campaign
         </button>
-        <button class="btn-sec" id="dlAllBtn" style="display:none;" onclick="dlAll()">↓ Download all WAV files</button>
+      </div>
+    </div>
+
+    <!-- Proxy help modal -->
+    <div id="proxyModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;align-items:center;justify-content:center;">
+      <div style="background:var(--surface);border-radius:var(--rl);padding:24px;max-width:520px;width:90%;box-shadow:0 12px 48px rgba(0,0,0,.2);max-height:90vh;overflow-y:auto;">
+        <div style="font-size:14px;font-weight:700;margin-bottom:14px;">Deploy a free Cloudflare Worker proxy</div>
+        <div style="font-size:12px;color:var(--ink2);line-height:1.8;margin-bottom:12px;">
+          Because browsers block cross-origin requests to hvms1.tanla.com, you need a tiny proxy. Cloudflare Workers are free for 100,000 requests/day.
+        </div>
+        <div style="font-size:11px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">Step 1 — Go to workers.cloudflare.com → Create Worker</div>
+        <div style="font-size:11px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">Step 2 — Paste this code:</div>
+        <pre style="background:var(--bg);border:1px solid var(--border);border-radius:var(--r);padding:12px;font-size:11px;overflow-x:auto;line-height:1.7;white-space:pre-wrap;">export default {
+  async fetch(request) {
+    if (request.method === 'OPTIONS') {
+      return new Response(null, { headers: corsHeaders() });
+    }
+    const body = await request.formData();
+    const res = await fetch(
+      'https://hvms1.tanla.com/upload',
+      { method: 'POST', body }
+    );
+    const text = await res.text();
+    return new Response(text, {
+      status: res.status,
+      headers: { ...corsHeaders(),
+        'Content-Type': 'application/json' }
+    });
+  }
+};
+function corsHeaders() {
+  return {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Headers': '*',
+  };
+}</pre>
+        <div style="font-size:11px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.05em;margin:10px 0 6px;">Step 3 — Click Deploy → copy the Worker URL</div>
+        <div style="font-size:12px;color:var(--ink2);margin-bottom:16px;">Paste that URL into the <strong>CORS proxy URL</strong> field above. Looks like: <code style="background:var(--bg);padding:1px 5px;border-radius:3px;">https://my-proxy.yourname.workers.dev</code></div>
+        <button onclick="document.getElementById('proxyModal').style.display='none'" class="btn-pri" style="width:100%;">Got it</button>
       </div>
     </div>
 
@@ -921,7 +1070,7 @@ function renderTable(){
     <thead><tr>
       <th>#</th><th>Phone</th><th>Name</th><th>Store</th><th>Timings</th>
       ${extra.map(h=>`<th>${h}</th>`).join('')}
-      <th>Script preview</th><th>Status</th><th>Audio</th>
+      <th>Personalised script</th><th>Status</th><th>Audio</th>
     </tr></thead>
     <tbody>${csvRows.map((r,i)=>`
       <tr id="tr-${i}">
@@ -931,7 +1080,7 @@ function renderTable(){
         <td>${r.store_name}</td>
         <td>${r.pickup_timings}</td>
         ${extra.map(h=>`<td>${r[h]||''}</td>`).join('')}
-        <td class="preview-cell">"${interp(getScript(),r).slice(0,90)}…"</td>
+        <td class="preview-cell">"${interp(getScript(),r).slice(0,100)}${interp(getScript(),r).length>100?'…':''}"</td>
         <td id="st-${i}"><span class="sbadge sb-pending">○ Pending</span></td>
         <td id="au-${i}"><span style="color:var(--ink3);font-size:11px;">—</span></td>
       </tr>`).join('')}
@@ -941,81 +1090,207 @@ function renderTable(){
 // ══════════════════════════════════════════════
 //  BULK GENERATE
 // ══════════════════════════════════════════════
+// ══════════════════════════════════════════════
+//  TANLA CAMPAIGN
+// ══════════════════════════════════════════════
+
+function showProxyHelp(){
+  document.getElementById('proxyModal').style.display='flex';
+}
+
+// Build a single-row CSV string for one contact
+function buildSingleRowCSV(row){
+  const headers = csvHeaders.join(',');
+  const vals = csvHeaders.map(h=>{
+    const v = (row[h]||'').toString();
+    return v.includes(',') ? `"${v}"` : v;
+  });
+  return headers + '\n' + vals.join(',');
+}
+
+// POST one personalised WAV + single-row CSV to Tanla
+async function dispatchToTanla(row, audioBlob){
+  const key   = document.getElementById('tanlaKey').value.trim();
+  const did   = document.getElementById('tanlaDID').value.trim();
+  const user  = document.getElementById('tanlaUser').value.trim();
+  const proxy = document.getElementById('tanlaProxy').value.trim();
+
+  if(!key)   throw new Error('Tanla access key missing');
+  if(!did)   throw new Error('DID number missing');
+  if(!user)  throw new Error('Username missing');
+
+  const endpoint = proxy
+    ? proxy.replace(/\/$/, '')   // use proxy if provided
+    : 'https://hvms1.tanla.com/upload'; // direct (works if CORS not an issue)
+
+  const csvBlob = new Blob([buildSingleRowCSV(row)], {type:'text/csv'});
+  const fname   = `${row.customer_name.replace(/\s+/g,'_')}.wav`;
+
+  const form = new FormData();
+  form.append('access_key', key);
+  form.append('csv',        csvBlob,      'contacts.csv');
+  form.append('audio',      audioBlob,    fname);
+  form.append('username',   user);
+  form.append('DID',        did);
+
+  const res = await fetch(endpoint, { method:'POST', body: form });
+  if(!res.ok){
+    const txt = await res.text().catch(()=>'');
+    throw new Error(`Tanla ${res.status}: ${txt.slice(0,80)}`);
+  }
+  return res.text();
+}
+
 async function startBulk(){
-  const apiKey=getApiKey();
-  if(!apiKey){showCSVErr('Set your Sarvam AI API key at the top of the page first.');return;}
-  if(!csvRows.length)return;
-  if(bulkRunning)return;
+  const apiKey = getApiKey();
+  if(!apiKey){ showCSVErr('Set your Sarvam AI API key at the top first.'); return; }
+  if(!csvRows.length) return;
+  if(bulkRunning) return;
 
-  bulkRunning=true; audioBlobs={};
-  const btn=document.getElementById('bulkBtn');
-  btn.disabled=true;
-  btn.innerHTML='<div style="width:14px;height:14px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;"></div> Generating…';
+  const tanlaKey  = document.getElementById('tanlaKey').value.trim();
+  const useTanla  = !!tanlaKey;  // if no Tanla key, just generate WAVs
 
-  document.getElementById('bulkProgWrap').style.display='block';
-  document.getElementById('dlAllBtn').style.display='none';
+  bulkRunning = true;
+  audioBlobs  = {};
 
-  // Re-render table so script previews are up to date
+  const btn = document.getElementById('bulkBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<div style="width:14px;height:14px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;display:inline-block;vertical-align:middle;margin-right:6px;"></div> Running campaign…';
+
+  // Show campaign status card
+  const statusCard = document.getElementById('campStatus');
+  statusCard.classList.add('show');
+  document.getElementById('campStatGrid').style.display = 'none';
+  document.getElementById('bulkProgFill').style.width = '0%';
+
+  // Phase 1 active
+  document.getElementById('ph1num').classList.add('active');
+  document.getElementById('ph1badge').style.display = 'none';
+
   renderTable();
 
-  let done=0,errs=0;
-  const total=csvRows.length;
-  const upd=()=>{
-    document.getElementById('sDone').textContent=done;
-    document.getElementById('sLeft').textContent=Math.max(0,total-done-errs);
-    document.getElementById('sErr').textContent=errs;
-    document.getElementById('bulkProgFill').style.width=Math.round(((done+errs)/total)*100)+'%';
+  const total = csvRows.length;
+  let audioOk = 0, audioErr = 0, dispatched = 0, callErr = 0;
+
+  const upd = () => {
+    const done = audioOk + audioErr;
+    document.getElementById('sAudio').textContent      = audioOk;
+    document.getElementById('sDispatched').textContent = dispatched;
+    document.getElementById('sLeft').textContent       = Math.max(0, total - dispatched - callErr - audioErr);
+    document.getElementById('sErr').textContent        = audioErr + callErr;
+    document.getElementById('bulkProgFill').style.width =
+      Math.round(((dispatched + callErr + audioErr) / total) * 100) + '%';
   };
   upd();
 
-  for(let i=0;i<csvRows.length;i++){
-    const row=csvRows[i];
-    const text=interp(getScript(),row);
+  for(let i = 0; i < csvRows.length; i++){
+    const row  = csvRows[i];
+    const text = interp(getScript(), row);
 
-    // Mark generating
-    document.getElementById('st-'+i).innerHTML='<span class="sbadge sb-gen">⏳ Generating…</span>';
-    document.getElementById('tr-'+i).style.background='#FFFDF0';
+    // ── Phase 1: Generate audio ──────────────────────────────────────────
+    setRowStatus(i, 'gen', '⏳ Generating…');
 
+    let audioBlob;
     try{
-      const b64=await callSarvam(text);
-      const blob=b64ToBlob(b64);
-      const fname=`${row.phone_number}_${row.customer_name.replace(/\s+/g,'_')}.wav`;
-      audioBlobs[i]={blob,fname};
-      const url=URL.createObjectURL(blob);
+      const b64  = await callSarvam(text);
+      audioBlob  = b64ToBlob(b64);
+      const fname = `${(row.customer_name||'contact').replace(/\s+/g,'_')}_${row.phone_number}.wav`;
+      audioBlobs[i] = { blob: audioBlob, fname };
 
-      document.getElementById('st-'+i).innerHTML='<span class="sbadge sb-done">✓ Done</span>';
-      document.getElementById('au-'+i).innerHTML=
-        `<div style="display:flex;align-items:center;gap:6px;">
-          <audio class="mini" controls src="${url}"></audio>
-          <a href="${url}" download="${fname}" class="dl-btn">↓</a>
-        </div>`;
-      document.getElementById('tr-'+i).style.background='#F0FBF6';
-      done++;
+      const url = URL.createObjectURL(audioBlob);
+      setRowAudio(i, url, fname);
+      audioOk++;
 
     }catch(e){
-      document.getElementById('st-'+i).innerHTML='<span class="sbadge sb-err">✕ Error</span>';
-      document.getElementById('au-'+i).innerHTML=
-        `<span style="font-size:11px;color:var(--red);">${e.message.slice(0,50)}</span>`;
-      document.getElementById('tr-'+i).style.background='#FFF5F5';
-      errs++;
+      setRowStatus(i, 'err', '✕ Audio failed');
+      setRowNote(i, e.message.slice(0,60));
+      document.getElementById('tr-'+i).style.background = '#FFF5F5';
+      audioErr++;
+      upd();
+      continue; // skip Tanla call for this row
+    }
+
+    // ── Phase 2: Dispatch to Tanla ───────────────────────────────────────
+    if(useTanla){
+      setRowStatus(i, 'calling', '📞 Dispatching…');
+      document.getElementById('ph2num').classList.add('active');
+
+      try{
+        await dispatchToTanla(row, audioBlob);
+        setRowStatus(i, 'dispatched', '✓ Dispatched');
+        document.getElementById('tr-'+i).style.background = '#F0FBF6';
+        dispatched++;
+
+      }catch(e){
+        setRowStatus(i, 'err', '✕ Call failed');
+        setRowNote(i, e.message.slice(0,60));
+        document.getElementById('tr-'+i).style.background = '#FFF5F5';
+        callErr++;
+      }
+    } else {
+      // No Tanla key — just mark audio done
+      setRowStatus(i, 'done', '✓ Audio ready');
+      document.getElementById('tr-'+i).style.background = '#F0FBF6';
+      dispatched++; // count as "done" for progress
     }
 
     upd();
-    if(i<csvRows.length-1) await new Promise(r=>setTimeout(r,350));
+    // Throttle: 500ms between calls to avoid hammering APIs
+    if(i < csvRows.length - 1) await new Promise(r => setTimeout(r, 500));
   }
 
-  bulkRunning=false;
-  btn.disabled=false;
-  btn.innerHTML='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polygon points="5 3 19 12 5 21 5 3"/></svg> Regenerate all';
-  if(done>0) document.getElementById('dlAllBtn').style.display='inline-flex';
+  // ── Wrap up ──────────────────────────────────────────────────────────────
+  bulkRunning = false;
+  btn.disabled = false;
+  btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polygon points="5 3 19 12 5 21 5 3"/></svg> Re-run campaign';
+
+  // Phase badges
+  document.getElementById('ph1num').classList.remove('active');
+  document.getElementById('ph1num').classList.add('done');
+  document.getElementById('ph1num').textContent = '✓';
+  document.getElementById('ph1badge').style.display='inline-flex';
+  document.getElementById('ph1badge').className='sbadge sb-done';
+  document.getElementById('ph1badge').textContent=`${audioOk} generated`;
+
+  if(useTanla){
+    document.getElementById('ph2num').classList.remove('active');
+    document.getElementById('ph2num').classList.add('done');
+    document.getElementById('ph2num').textContent='✓';
+    document.getElementById('ph2badge').style.display='inline-flex';
+    document.getElementById('ph2badge').className='sbadge sb-dispatched';
+    document.getElementById('ph2badge').textContent=`${dispatched} dispatched`;
+  }
+
+  // Show final stat cards
+  document.getElementById('campStatGrid').style.display  = 'grid';
+  document.getElementById('totalStat').textContent       = total;
+  document.getElementById('dispatchedStat').textContent  = dispatched;
+  document.getElementById('audioErrStat').textContent    = audioErr;
+  document.getElementById('callErrStat').textContent     = callErr;
+
+  upd();
 }
 
-// ══════════════════════════════════════════════
-//  DOWNLOAD ALL
-// ══════════════════════════════════════════════
+// ── Row helpers ────────────────────────────────────────────────────────────
+function setRowStatus(i, type, label){
+  const cls = {gen:'sb-gen',err:'sb-err',done:'sb-done',dispatched:'sb-dispatched',calling:'sb-calling'}[type]||'sb-pending';
+  document.getElementById('st-'+i).innerHTML=`<span class="sbadge ${cls}">${label}</span>`;
+}
+function setRowAudio(i, url, fname){
+  document.getElementById('au-'+i).innerHTML=
+    `<div style="display:flex;align-items:center;gap:5px;">
+      <audio class="mini" controls src="${url}"></audio>
+      <a href="${url}" download="${fname}" class="dl-btn">↓</a>
+    </div>`;
+}
+function setRowNote(i, msg){
+  document.getElementById('au-'+i).innerHTML=
+    `<span style="font-size:11px;color:var(--red);">${msg}</span>`;
+}
+
+// ── Download all WAVs ──────────────────────────────────────────────────────
 async function dlAll(){
-  const keys=Object.keys(audioBlobs);
-  for(const i of keys){
+  for(const i of Object.keys(audioBlobs)){
     const {blob,fname}=audioBlobs[i];
     const url=URL.createObjectURL(blob);
     const a=document.createElement('a');
@@ -1025,6 +1300,20 @@ async function dlAll(){
     URL.revokeObjectURL(url);
     await new Promise(r=>setTimeout(r,200));
   }
+}
+
+// ── Download campaign report CSV ───────────────────────────────────────────
+function dlReport(){
+  if(!csvRows.length) return;
+  const rows = csvRows.map(r=>{
+    const st = document.getElementById('st-'+r._i)?.querySelector('.sbadge')?.textContent||'pending';
+    return [...csvHeaders.map(h=>r[h]||''), st].join(',');
+  });
+  const csv = [...csvHeaders, 'campaign_status'].join(',') + '\n' + rows.join('\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
+  a.download = 'campaign_report.csv';
+  a.click();
 }
 </script>
 </body>
