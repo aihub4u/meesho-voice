@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Voice Script Tester — Sarvam AI</title>
+<title>Meesho Voice Platform — Sarvam AI</title>
 <style>
   :root {
     --bg:       #F7F6F2;
@@ -454,6 +454,74 @@
     50%       { transform: scaleY(.35); opacity: 1; }
   }
 
+
+  /* ── Tabs ── */
+  .tab-nav { display:flex; gap:0; border-bottom:2px solid var(--border); margin-bottom:22px; }
+  .tab-btn { padding:10px 20px; font-size:13px; font-weight:500; color:var(--ink2); background:none; border:none; border-bottom:2.5px solid transparent; margin-bottom:-2px; cursor:pointer; transition:all .15s; white-space:nowrap; }
+  .tab-btn.active { color:var(--accent); border-bottom-color:var(--accent); font-weight:700; }
+  .tab-btn:hover:not(.active) { color:var(--ink); }
+  .tab-pane { display:none; }
+  .tab-pane.active { display:block; }
+
+  /* ── CSV upload zone ── */
+  .drop-zone {
+    border:2px dashed var(--border2); border-radius:var(--radius-lg);
+    padding:36px 24px; text-align:center; cursor:pointer;
+    background:var(--bg); transition:all .15s; margin-bottom:14px;
+  }
+  .drop-zone:hover, .drop-zone.over { border-color:var(--accent); background:var(--accent-l); }
+  .drop-zone .dz-icon { font-size:32px; margin-bottom:8px; }
+  .drop-zone .dz-title { font-size:14px; font-weight:600; color:var(--ink); }
+  .drop-zone .dz-sub   { font-size:12px; color:var(--ink3); margin-top:4px; }
+
+  /* ── CSV preview table ── */
+  .csv-table-wrap { overflow-x:auto; border-radius:var(--radius); border:1px solid var(--border); margin-bottom:14px; }
+  table.csv-table { width:100%; border-collapse:collapse; font-size:13px; }
+  table.csv-table th { padding:9px 14px; text-align:left; font-weight:700; font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:var(--ink2); background:var(--bg); border-bottom:1px solid var(--border); white-space:nowrap; }
+  table.csv-table td { padding:9px 14px; color:var(--ink); border-bottom:1px solid var(--border); vertical-align:top; }
+  table.csv-table tr:last-child td { border-bottom:none; }
+  table.csv-table tr:hover td { background:var(--accent-l); }
+  .preview-col { font-size:12px; color:var(--ink2); font-style:italic; max-width:260px; }
+
+  /* ── Bulk row status ── */
+  .status-badge { display:inline-flex; align-items:center; gap:4px; font-size:11px; font-weight:600; padding:2px 9px; border-radius:20px; white-space:nowrap; }
+  .status-pending   { background:#F0EFF9; color:var(--accent); }
+  .status-generating{ background:#FFF4E0; color:var(--amber); }
+  .status-done      { background:var(--green-l); color:var(--green); }
+  .status-error     { background:var(--red-l); color:var(--red); }
+
+  /* ── Bulk progress ── */
+  .bulk-progress-wrap { margin:14px 0; }
+  .bulk-progress-bar  { height:6px; background:var(--border); border-radius:6px; overflow:hidden; }
+  .bulk-progress-fill { height:100%; background:var(--accent); border-radius:6px; width:0%; transition:width .4s; }
+  .bulk-stats { display:flex; gap:12px; margin-top:8px; font-size:12px; color:var(--ink2); }
+  .bulk-stats b { color:var(--ink); }
+
+  /* ── Inline audio mini ── */
+  audio.mini { height:28px; width:180px; vertical-align:middle; }
+
+  /* ── Column spec box ── */
+  .col-spec { background:var(--accent-l); border:1px solid #C8C3F5; border-radius:var(--radius); padding:12px 16px; margin-bottom:14px; }
+  .col-spec-title { font-size:11px; font-weight:700; color:var(--accent-d); text-transform:uppercase; letter-spacing:.05em; margin-bottom:8px; }
+  .col-spec-grid { display:grid; grid-template-columns:1fr 1fr; gap:6px; }
+  .col-tag { display:inline-block; font-family:monospace; font-size:11px; font-weight:700; background:white; color:var(--accent-d); padding:1px 7px; border-radius:4px; border:1px solid #C8C3F5; }
+  .col-desc { font-size:12px; color:var(--ink2); }
+
+  /* ── Action row ── */
+  .action-row { display:flex; gap:8px; flex-wrap:wrap; margin-top:14px; }
+  .btn-primary { padding:10px 20px; background:var(--accent); color:#fff; border:none; border-radius:var(--radius); font-size:13px; font-weight:700; cursor:pointer; display:flex; align-items:center; gap:7px; transition:background .15s; }
+  .btn-primary:hover:not(:disabled) { background:var(--accent-d); }
+  .btn-primary:disabled { background:#C8C3F5; cursor:not-allowed; }
+  .btn-secondary { padding:10px 16px; background:var(--surface); color:var(--ink2); border:1.5px solid var(--border2); border-radius:var(--radius); font-size:13px; font-weight:500; cursor:pointer; transition:all .15s; }
+  .btn-secondary:hover { border-color:var(--accent); color:var(--accent); }
+  .btn-sm { padding:5px 11px; font-size:12px; border-radius:6px; border:1px solid var(--border2); background:var(--surface); color:var(--ink2); cursor:pointer; }
+  .btn-sm:hover { border-color:var(--accent); color:var(--accent); }
+
+  @media(max-width:520px){
+    .col-spec-grid { grid-template-columns:1fr; }
+    .bulk-stats { flex-wrap:wrap; gap:8px; }
+  }
+
   @media (max-width: 520px) {
     .tuning-row { grid-template-columns: 1fr; }
     .voice-grid { grid-template-columns: repeat(2, 1fr); }
@@ -473,10 +541,19 @@
       </svg>
     </div>
     <div class="header-text">
-      <h1>Voice script tester</h1>
-      <p>Sarvam AI · Type a script, pick a voice, hear it instantly</p>
+      <h1>Meesho Voice Platform</h1>
+      <p>Sarvam AI bulbul:v3 · Script tester &amp; bulk CSV generator</p>
     </div>
   </div>
+
+  <!-- Tab nav -->
+  <div class="tab-nav">
+    <button class="tab-btn active" onclick="switchTab('tester',this)">🎙 Script tester</button>
+    <button class="tab-btn" onclick="switchTab('bulk',this)">📋 Bulk CSV generator</button>
+  </div>
+
+  <!-- ══ TAB: TESTER ══ -->
+  <div class="tab-pane active" id="tab-tester">
 
   <!-- API Key -->
   <div class="key-strip">
@@ -580,6 +657,83 @@
     <div class="card-label" style="margin-bottom:10px; padding-left:2px;">Recent generations</div>
     <div class="history-list" id="historyList"></div>
   </div>
+
+  </div><!-- /tab-tester -->
+
+  <!-- ══ TAB: BULK CSV ══ -->
+  <div class="tab-pane" id="tab-bulk">
+
+    <!-- API key reminder -->
+    <div id="bulkKeyReminder" class="error-box" style="display:none;margin-bottom:14px;">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      <span>Set your Sarvam AI API key in the Script Tester tab first.</span>
+    </div>
+
+    <!-- Column spec -->
+    <div class="col-spec">
+      <div class="col-spec-title">Required CSV columns</div>
+      <div class="col-spec-grid">
+        <div><span class="col-tag">phone_number</span> <span class="col-desc">E.164 e.g. +919876543210</span></div>
+        <div><span class="col-tag">customer_name</span> <span class="col-desc">Used in {customer_name}</span></div>
+        <div><span class="col-tag">store_name</span> <span class="col-desc">Used in {store_name}</span></div>
+        <div><span class="col-tag">pickup_timings</span> <span class="col-desc">Used in {pickup_timings}</span></div>
+      </div>
+      <div style="margin-top:10px;font-size:12px;color:var(--ink2);">
+        Any extra column you add automatically becomes a <span class="col-tag">{variable}</span> you can use in your script template above.
+      </div>
+    </div>
+
+    <!-- Drop zone -->
+    <div class="drop-zone" id="dropZone" onclick="document.getElementById('csvFileInput').click()"
+      ondragover="event.preventDefault();this.classList.add('over')"
+      ondragleave="this.classList.remove('over')"
+      ondrop="handleDrop(event)">
+      <div class="dz-icon">📂</div>
+      <div class="dz-title">Drop your CSV file here</div>
+      <div class="dz-sub">or click to browse · .csv only · max 5 MB</div>
+    </div>
+    <input type="file" id="csvFileInput" accept=".csv" style="display:none" onchange="handleFileSelect(this)"/>
+
+    <div class="action-row" style="margin-top:0;margin-bottom:14px;">
+      <button class="btn-secondary" onclick="loadSampleCSV()">Load sample data</button>
+      <a id="templateDownload" href="" download="meesho_template.csv" class="btn-secondary" style="text-decoration:none;display:inline-flex;align-items:center;">↓ Download template</a>
+    </div>
+
+    <!-- Validation errors -->
+    <div id="csvErrors" style="display:none;background:var(--red-l);border:1px solid #FECACA;border-radius:var(--radius);padding:12px 14px;margin-bottom:14px;font-size:13px;color:var(--red);"></div>
+
+    <!-- Preview table -->
+    <div id="csvPreviewWrap" style="display:none;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+        <div style="font-size:14px;font-weight:700;color:var(--ink);" id="csvRowCount"></div>
+        <button class="btn-sm" onclick="clearCSV()">✕ Clear</button>
+      </div>
+      <div class="csv-table-wrap">
+        <table class="csv-table" id="csvTable"></table>
+      </div>
+
+      <!-- Bulk progress (shown during generation) -->
+      <div class="bulk-progress-wrap" id="bulkProgressWrap" style="display:none;">
+        <div class="bulk-progress-bar"><div class="bulk-progress-fill" id="bulkProgressFill"></div></div>
+        <div class="bulk-stats">
+          <span>✅ Done: <b id="statDone">0</b></span>
+          <span>⏳ Remaining: <b id="statLeft">0</b></span>
+          <span>❌ Errors: <b id="statErr">0</b></span>
+        </div>
+      </div>
+
+      <div class="action-row">
+        <button class="btn-primary" id="bulkGenBtn" onclick="startBulkGenerate()">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          Generate all voice recordings
+        </button>
+        <button class="btn-secondary" id="bulkDownloadBtn" style="display:none;" onclick="downloadAllAudio()">
+          ↓ Download all as ZIP
+        </button>
+      </div>
+    </div>
+
+  </div><!-- /tab-bulk -->
 
 </div><!-- /shell -->
 
@@ -888,6 +1042,294 @@ function playHistoryItem(i) {
   currentBlobUrl  = h.blobUrl;
   currentFilename = h.filename;
 }
+
+
+// ══════════════════════════════════════════════
+//  TAB SWITCHING
+// ══════════════════════════════════════════════
+function switchTab(id, btn) {
+  document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-'+id).classList.add('active');
+  btn.classList.add('active');
+}
+
+// ══════════════════════════════════════════════
+//  CSV STATE
+// ══════════════════════════════════════════════
+let csvRows    = [];   // parsed rows [{phone_number, customer_name, ...}]
+let csvHeaders = [];
+let audioBlobs = {};   // { rowIndex: Blob }
+
+const SAMPLE_CSV_DATA =
+`phone_number,customer_name,store_name,pickup_timings
++919876543210,Riya Sharma,Lajpat Nagar Store,10am to 6pm
++919812345678,Amit Verma,Saket Store,9am to 5pm
++919900112233,Priya Patel,Connaught Place Store,11am to 7pm
++919988776655,Rahul Singh,Nehru Place Store,10am to 4pm`;
+
+// Set template download href on load
+(function() {
+  const blob = new Blob([SAMPLE_CSV_DATA], {type:'text/csv'});
+  document.getElementById('templateDownload').href = URL.createObjectURL(blob);
+})();
+
+// ── File handling ─────────────────────────────
+function handleDrop(e) {
+  e.preventDefault();
+  document.getElementById('dropZone').classList.remove('over');
+  const file = e.dataTransfer.files[0];
+  if (file) readCSVFile(file);
+}
+function handleFileSelect(input) {
+  if (input.files[0]) readCSVFile(input.files[0]);
+}
+function loadSampleCSV() { parseCSVText(SAMPLE_CSV_DATA); }
+function clearCSV() {
+  csvRows = []; csvHeaders = []; audioBlobs = {};
+  document.getElementById('csvPreviewWrap').style.display = 'none';
+  document.getElementById('csvErrors').style.display = 'none';
+  document.getElementById('bulkDownloadBtn').style.display = 'none';
+  document.getElementById('csvFileInput').value = '';
+}
+
+function readCSVFile(file) {
+  if (!file.name.endsWith('.csv')) { showCSVError('Only .csv files are supported.'); return; }
+  if (file.size > 5*1024*1024)    { showCSVError('File too large — max 5 MB.'); return; }
+  const reader = new FileReader();
+  reader.onload = e => parseCSVText(e.target.result);
+  reader.readAsText(file);
+}
+
+// ── CSV parser (no library needed) ───────────────────────────────────────────
+function parseCSVText(text) {
+  document.getElementById('csvErrors').style.display = 'none';
+  audioBlobs = {};
+  const lines = text.trim().split(/\r?\n/).filter(Boolean);
+  if (lines.length < 2) { showCSVError('File must have a header row and at least one data row.'); return; }
+
+  csvHeaders = lines[0].split(',').map(h => h.trim().replace(/^"+|"+$/g,''));
+  const required = ['phone_number','customer_name','store_name','pickup_timings'];
+  const missing  = required.filter(r => !csvHeaders.includes(r));
+  if (missing.length) { showCSVError('Missing required columns: ' + missing.join(', ')); return; }
+
+  const errors = [];
+  csvRows = lines.slice(1).map((line, i) => {
+    // Handle quoted commas
+    const vals = line.match(/(".*?"|[^,]+|(?<=,)(?=,)|^(?=,)|(?<=,)$)/g) || [];
+    const row = {};
+    csvHeaders.forEach((h, idx) => {
+      row[h] = (vals[idx] || '').trim().replace(/^"+|"+$/g,'');
+    });
+    row._idx = i;
+    row._status = 'pending';
+    if (!row.phone_number || !/^\+\d{10,15}$/.test(row.phone_number)) {
+      errors.push(`Row ${i+2}: invalid phone "${row.phone_number}"`);
+    }
+    return row;
+  });
+
+  if (errors.length) showCSVError(errors.join('<br>'));
+  renderCSVPreview();
+}
+
+function showCSVError(msg) {
+  const el = document.getElementById('csvErrors');
+  el.innerHTML = '⚠ ' + msg;
+  el.style.display = 'block';
+}
+
+// ── Preview table ─────────────────────────────────────────────────────────────
+function renderCSVPreview() {
+  if (!csvRows.length) return;
+  document.getElementById('csvPreviewWrap').style.display = 'block';
+  document.getElementById('csvRowCount').textContent = csvRows.length + ' contacts loaded';
+  document.getElementById('bulkProgressWrap').style.display = 'none';
+  document.getElementById('bulkDownloadBtn').style.display = 'none';
+  renderCSVTable();
+}
+
+function getScript() {
+  return document.getElementById('script').value.trim() ||
+    'Hi {customer_name}, your Meesho Store Pickup order has arrived at {store_name}. Please pick it up today between {pickup_timings}.';
+}
+
+function interpRow(row) {
+  return getScript().replace(/\{(\w+)\}/g, (_, k) => row[k] || '{'+k+'}');
+}
+
+function renderCSVTable() {
+  const tbl = document.getElementById('csvTable');
+  const voiceName = VOICES.find(v=>v.id===selectedVoice)?.label || selectedVoice;
+
+  // Extra cols beyond required 4
+  const extraCols = csvHeaders.filter(h => !['phone_number','customer_name','store_name','pickup_timings'].includes(h));
+
+  tbl.innerHTML = `
+    <thead><tr>
+      <th>#</th>
+      <th>Phone</th>
+      <th>Customer</th>
+      <th>Store</th>
+      <th>Timings</th>
+      ${extraCols.map(h=>`<th>${h}</th>`).join('')}
+      <th>Generated script preview</th>
+      <th>Status</th>
+      <th>Audio</th>
+    </tr></thead>
+    <tbody id="csvTbody"></tbody>`;
+
+  const tbody = document.getElementById('csvTbody');
+  tbody.innerHTML = csvRows.map((row, i) => `
+    <tr id="csv-row-${i}">
+      <td style="color:var(--ink3);font-size:11px;">${i+1}</td>
+      <td style="font-family:monospace;font-size:11px;">${row.phone_number}</td>
+      <td style="font-weight:600;">${row.customer_name}</td>
+      <td>${row.store_name}</td>
+      <td>${row.pickup_timings}</td>
+      ${extraCols.map(h=>`<td>${row[h]||''}</td>`).join('')}
+      <td class="preview-col">"${interpRow(row).replace(/</g,'&lt;').slice(0,100)}${interpRow(row).length>100?'…':''}"</td>
+      <td id="status-${i}">${statusBadge('pending')}</td>
+      <td id="audio-${i}"><span style="color:var(--ink3);font-size:11px;">—</span></td>
+    </tr>`).join('');
+}
+
+function statusBadge(s) {
+  const map = {
+    pending:    ['status-pending',    '○ Pending'],
+    generating: ['status-generating', '⏳ Generating…'],
+    done:       ['status-done',       '✓ Done'],
+    error:      ['status-error',      '✕ Error'],
+  };
+  const [cls, label] = map[s] || map.pending;
+  return `<span class="status-badge ${cls}">${label}</span>`;
+}
+
+// ── Bulk generation ───────────────────────────────────────────────────────────
+let bulkRunning = false;
+
+async function startBulkGenerate() {
+  const apiKey = document.getElementById('apiKey').value.trim();
+  if (!apiKey) {
+    const rem = document.getElementById('bulkKeyReminder');
+    rem.style.display = 'flex'; setTimeout(()=>rem.style.display='none', 5000);
+    return;
+  }
+  if (!csvRows.length) return;
+  if (bulkRunning) return;
+
+  bulkRunning = true;
+  audioBlobs = {};
+  const btn = document.getElementById('bulkGenBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> Generating…';
+
+  document.getElementById('bulkProgressWrap').style.display = 'block';
+  document.getElementById('bulkDownloadBtn').style.display = 'none';
+
+  const voice = VOICES.find(v => v.id === selectedVoice);
+  let done = 0, errs = 0;
+
+  const updateStats = () => {
+    const left = csvRows.length - done - errs;
+    document.getElementById('statDone').textContent = done;
+    document.getElementById('statLeft').textContent = Math.max(0,left);
+    document.getElementById('statErr').textContent  = errs;
+    document.getElementById('bulkProgressFill').style.width =
+      Math.round(((done+errs)/csvRows.length)*100)+'%';
+  };
+  updateStats();
+
+  for (let i = 0; i < csvRows.length; i++) {
+    const row = csvRows[i];
+    const text = interpRow(row);
+
+    // Update row status
+    document.getElementById('status-'+i).innerHTML = statusBadge('generating');
+    document.getElementById('csv-row-'+i).style.background = '#FFFDF0';
+
+    try {
+      const res = await fetch('https://api.sarvam.ai/text-to-speech', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'api-subscription-key': apiKey,
+        },
+        body: JSON.stringify({
+          inputs: [text],
+          target_language_code: voice.code,
+          speaker: voice.id,
+          speech_sample_rate: selectedSR,
+          model: 'bulbul:v3',
+        }),
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(()=>({}));
+        throw new Error(err.message || err.detail || 'API error ' + res.status);
+      }
+
+      const data = await res.json();
+      const b64 = data.audios?.[0];
+      if (!b64) throw new Error('No audio returned');
+
+      // Store blob
+      const bin = atob(b64);
+      const buf = new Uint8Array(bin.length);
+      for (let j=0;j<bin.length;j++) buf[j]=bin.charCodeAt(j);
+      const blob = new Blob([buf], {type:'audio/wav'});
+      audioBlobs[i] = { blob, filename: `${row.phone_number}_${row.customer_name.replace(/\s+/g,'_')}.wav` };
+
+      const blobUrl = URL.createObjectURL(blob);
+
+      // Update row
+      document.getElementById('status-'+i).innerHTML = statusBadge('done');
+      document.getElementById('audio-'+i).innerHTML =
+        `<div style="display:flex;align-items:center;gap:6px;">
+          <audio class="mini" controls src="${blobUrl}"></audio>
+          <a href="${blobUrl}" download="${audioBlobs[i].filename}" class="btn-sm">↓</a>
+        </div>`;
+      document.getElementById('csv-row-'+i).style.background = '#F0FBF6';
+      done++;
+
+    } catch(e) {
+      document.getElementById('status-'+i).innerHTML = statusBadge('error');
+      document.getElementById('audio-'+i).innerHTML =
+        `<span style="font-size:11px;color:var(--red);" title="${e.message}">✕ ${e.message.slice(0,40)}</span>`;
+      document.getElementById('csv-row-'+i).style.background = '#FFF5F5';
+      errs++;
+    }
+
+    updateStats();
+    // Small delay to avoid rate limiting
+    if (i < csvRows.length-1) await new Promise(r=>setTimeout(r,300));
+  }
+
+  bulkRunning = false;
+  btn.disabled = false;
+  btn.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><polygon points="5 3 19 12 5 21 5 3"/></svg> Regenerate all';
+  if (done > 0) document.getElementById('bulkDownloadBtn').style.display = 'inline-flex';
+}
+
+// ── Download all as ZIP (uses browser-native approach without library) ────────
+async function downloadAllAudio() {
+  // Download each file individually since we can't zip without a library
+  // Tell user to download individually if needed, or download all one by one
+  const keys = Object.keys(audioBlobs);
+  if (!keys.length) return;
+
+  for (const i of keys) {
+    const { blob, filename } = audioBlobs[i];
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    await new Promise(r=>setTimeout(r,200));
+  }
+}
+
 
 // ── Enter to generate ──
 document.getElementById('script').addEventListener('keydown', e => {
