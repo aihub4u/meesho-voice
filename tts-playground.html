@@ -1,0 +1,850 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Voice Script Tester — Sarvam AI</title>
+<style>
+  :root {
+    --bg:       #F7F6F2;
+    --surface:  #FFFFFF;
+    --border:   #E4E1D9;
+    --border2:  #CBC8BF;
+    --ink:      #1A1916;
+    --ink2:     #6B6860;
+    --ink3:     #A8A49C;
+    --accent:   #5B3FE8;
+    --accent-l: #EAE6FD;
+    --accent-d: #3D29B5;
+    --green:    #0F6E56;
+    --green-l:  #E1F5EE;
+    --red:      #B91C1C;
+    --red-l:    #FEE2E2;
+    --amber:    #854F0B;
+    --amber-l:  #FFF4E0;
+    --radius:   10px;
+    --radius-lg:14px;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    min-height: 100vh;
+    line-height: 1.5;
+  }
+
+  /* ── Layout ── */
+  .shell {
+    max-width: 780px;
+    margin: 0 auto;
+    padding: 32px 20px 60px;
+  }
+
+  /* ── Header ── */
+  .header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 32px;
+  }
+  .logo {
+    width: 38px; height: 38px;
+    background: var(--accent);
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .logo svg { width: 20px; height: 20px; }
+  .header-text h1 { font-size: 18px; font-weight: 700; letter-spacing: -0.03em; color: var(--ink); }
+  .header-text p  { font-size: 13px; color: var(--ink2); margin-top: 1px; }
+
+  /* ── Card ── */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 22px 24px;
+    margin-bottom: 14px;
+  }
+  .card-label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: var(--ink3);
+    margin-bottom: 12px;
+  }
+
+  /* ── API key strip ── */
+  .key-strip {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    background: var(--amber-l);
+    border: 1px solid #FAC775;
+    border-radius: var(--radius);
+    padding: 10px 14px;
+    margin-bottom: 14px;
+  }
+  .key-strip svg { flex-shrink: 0; color: var(--amber); }
+  .key-strip input {
+    flex: 1;
+    border: none;
+    background: transparent;
+    font-size: 13px;
+    font-family: 'Courier New', monospace;
+    color: var(--ink);
+    outline: none;
+    min-width: 0;
+  }
+  .key-strip input::placeholder { color: var(--ink3); font-family: system-ui; }
+  .key-status {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 9px;
+    border-radius: 20px;
+    flex-shrink: 0;
+  }
+  .key-status.set   { background: var(--green-l); color: var(--green); }
+  .key-status.unset { background: #FEE2E2; color: var(--red); }
+
+  /* ── Script textarea ── */
+  .script-wrap { position: relative; }
+  textarea#script {
+    width: 100%;
+    min-height: 130px;
+    padding: 14px 16px;
+    font-size: 15px;
+    font-family: 'Inter', system-ui, sans-serif;
+    color: var(--ink);
+    background: var(--bg);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    resize: vertical;
+    outline: none;
+    transition: border-color .15s;
+    line-height: 1.65;
+  }
+  textarea#script:focus { border-color: var(--accent); }
+
+  .var-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 8px;
+  }
+  .var-pill {
+    font-size: 11px;
+    font-weight: 600;
+    font-family: 'Courier New', monospace;
+    background: var(--accent-l);
+    color: var(--accent-d);
+    padding: 3px 9px;
+    border-radius: 5px;
+    cursor: pointer;
+    border: none;
+    transition: background .12s;
+    letter-spacing: .01em;
+  }
+  .var-pill:hover { background: #D5CEFC; }
+
+  .char-count {
+    font-size: 11px;
+    color: var(--ink3);
+    text-align: right;
+    margin-top: 5px;
+  }
+  .char-count.warn { color: var(--amber); }
+
+  /* ── Template row ── */
+  .tpl-row {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+    flex-wrap: wrap;
+  }
+  .tpl-btn {
+    font-size: 12px;
+    font-weight: 500;
+    padding: 5px 12px;
+    border-radius: 6px;
+    border: 1px solid var(--border2);
+    background: var(--surface);
+    color: var(--ink2);
+    cursor: pointer;
+    transition: all .12s;
+  }
+  .tpl-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-l); }
+
+  /* ── Voice grid ── */
+  .voice-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 8px;
+  }
+  .voice-card {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: var(--radius);
+    border: 1.5px solid var(--border);
+    background: var(--surface);
+    cursor: pointer;
+    transition: all .12s;
+    text-align: left;
+  }
+  .voice-card:hover { border-color: var(--accent); background: var(--accent-l); }
+  .voice-card.active {
+    border-color: var(--accent);
+    background: var(--accent-l);
+    box-shadow: 0 0 0 3px rgba(91,63,232,.1);
+  }
+  .voice-avatar {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px;
+    font-weight: 700;
+    flex-shrink: 0;
+    transition: background .12s, color .12s;
+  }
+  .voice-card.active .voice-avatar { background: var(--accent); color: #fff; }
+  .voice-card:not(.active) .voice-avatar { background: var(--border); color: var(--ink2); }
+  .voice-name  { font-size: 13px; font-weight: 600; color: var(--ink); }
+  .voice-lang  { font-size: 11px; color: var(--ink3); margin-top: 1px; }
+  .voice-check { margin-left: auto; font-size: 14px; color: var(--accent); display: none; }
+  .voice-card.active .voice-check { display: block; }
+
+  /* ── Tuning sliders ── */
+  .tuning-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+  .slider-group label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--ink2);
+    margin-bottom: 6px;
+  }
+  .slider-group label span { font-weight: 400; color: var(--accent); }
+  input[type=range] {
+    width: 100%;
+    accent-color: var(--accent);
+    height: 4px;
+    cursor: pointer;
+  }
+  .slider-hints {
+    display: flex;
+    justify-content: space-between;
+    font-size: 10px;
+    color: var(--ink3);
+    margin-top: 4px;
+  }
+
+  /* ── Generate button ── */
+  .generate-btn {
+    width: 100%;
+    padding: 15px;
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: -.01em;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    transition: background .15s, transform .1s;
+    margin-top: 4px;
+  }
+  .generate-btn:hover:not(:disabled) { background: var(--accent-d); }
+  .generate-btn:active:not(:disabled) { transform: scale(.99); }
+  .generate-btn:disabled { background: #C8C3F5; cursor: not-allowed; }
+  .generate-btn .spinner {
+    width: 17px; height: 17px;
+    border: 2px solid rgba(255,255,255,.3);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin .7s linear infinite;
+    display: none;
+  }
+  .generate-btn.loading .spinner { display: block; }
+  .generate-btn.loading .btn-icon { display: none; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── Player ── */
+  .player-card {
+    background: var(--green-l);
+    border: 1px solid #9FE1CB;
+    border-radius: var(--radius-lg);
+    padding: 18px 20px;
+    margin-bottom: 14px;
+    display: none;
+  }
+  .player-card.visible { display: block; }
+
+  .player-top {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+  .player-badge {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--green);
+    background: rgba(15,110,86,.12);
+    padding: 3px 9px;
+    border-radius: 20px;
+  }
+  .player-meta { font-size: 12px; color: #0D5A48; margin-left: auto; }
+
+  /* Custom audio player */
+  .audio-player {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: #fff;
+    border: 1px solid #9FE1CB;
+    border-radius: var(--radius);
+    padding: 10px 14px;
+  }
+  .play-btn {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    background: var(--accent);
+    border: none;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    transition: background .12s, transform .1s;
+  }
+  .play-btn:hover { background: var(--accent-d); }
+  .play-btn:active { transform: scale(.95); }
+  .play-btn svg { width: 14px; height: 14px; fill: #fff; margin-left: 2px; }
+  .play-btn.playing svg.play-icon { display: none; }
+  .play-btn:not(.playing) svg.pause-icon { display: none; }
+
+  .progress-track {
+    flex: 1;
+    height: 4px;
+    background: var(--border);
+    border-radius: 4px;
+    cursor: pointer;
+    position: relative;
+  }
+  .progress-fill {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 4px;
+    width: 0%;
+    transition: width .1s linear;
+    pointer-events: none;
+  }
+  .time-label { font-size: 11px; color: var(--ink3); font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+  .player-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+  }
+  .action-btn {
+    font-size: 12px;
+    font-weight: 500;
+    padding: 6px 14px;
+    border-radius: 7px;
+    border: 1px solid #9FE1CB;
+    background: #fff;
+    color: var(--green);
+    cursor: pointer;
+    transition: all .12s;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .action-btn:hover { background: var(--green-l); border-color: var(--green); }
+
+  /* ── History ── */
+  .history-list { display: flex; flex-direction: column; gap: 8px; }
+  .history-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    background: var(--surface);
+    cursor: pointer;
+    transition: border-color .12s;
+  }
+  .history-item:hover { border-color: var(--accent); }
+  .h-voice-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--accent);
+    flex-shrink: 0;
+  }
+  .h-text {
+    flex: 1;
+    font-size: 13px;
+    color: var(--ink);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
+  }
+  .h-meta { font-size: 11px; color: var(--ink3); flex-shrink: 0; }
+  .h-play {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--accent);
+    background: var(--accent-l);
+    border: none;
+    padding: 3px 10px;
+    border-radius: 5px;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+
+  /* ── Error ── */
+  .error-box {
+    background: var(--red-l);
+    border: 1px solid #FECACA;
+    border-radius: var(--radius);
+    padding: 12px 14px;
+    font-size: 13px;
+    color: var(--red);
+    margin-bottom: 14px;
+    display: none;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  .error-box.visible { display: flex; }
+  .error-box svg { flex-shrink: 0; margin-top: 1px; }
+
+  /* ── Waveform animation (decorative, while generating) ── */
+  .waveform {
+    display: none;
+    align-items: center;
+    gap: 3px;
+    height: 24px;
+  }
+  .waveform.active { display: flex; }
+  .waveform span {
+    width: 3px;
+    border-radius: 3px;
+    background: var(--accent);
+    animation: wave 1s ease-in-out infinite;
+  }
+  .waveform span:nth-child(1) { height: 6px;  animation-delay: 0s; }
+  .waveform span:nth-child(2) { height: 14px; animation-delay: .1s; }
+  .waveform span:nth-child(3) { height: 20px; animation-delay: .2s; }
+  .waveform span:nth-child(4) { height: 14px; animation-delay: .3s; }
+  .waveform span:nth-child(5) { height: 8px;  animation-delay: .4s; }
+  .waveform span:nth-child(6) { height: 16px; animation-delay: .15s; }
+  .waveform span:nth-child(7) { height: 10px; animation-delay: .25s; }
+  @keyframes wave {
+    0%, 100% { transform: scaleY(1); opacity: .7; }
+    50%       { transform: scaleY(.35); opacity: 1; }
+  }
+
+  @media (max-width: 520px) {
+    .tuning-row { grid-template-columns: 1fr; }
+    .voice-grid { grid-template-columns: repeat(2, 1fr); }
+    .shell { padding: 20px 14px 40px; }
+  }
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="logo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/>
+        <path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v3M8 22h8"/>
+      </svg>
+    </div>
+    <div class="header-text">
+      <h1>Voice script tester</h1>
+      <p>Sarvam AI · Type a script, pick a voice, hear it instantly</p>
+    </div>
+  </div>
+
+  <!-- API Key -->
+  <div class="key-strip">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+    <input type="password" id="apiKey" placeholder="Paste your Sarvam AI API key here (api-subscription-key)" autocomplete="off" />
+    <span class="key-status unset" id="keyStatus">No key</span>
+  </div>
+
+  <!-- Error box -->
+  <div class="error-box" id="errorBox">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+    <span id="errorMsg"></span>
+  </div>
+
+  <!-- Player (shown after generation) -->
+  <div class="player-card" id="playerCard">
+    <div class="player-top">
+      <span class="player-badge">✓ Audio ready</span>
+      <div class="waveform active" id="waveAnim">
+        <span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+      </div>
+      <span class="player-meta" id="playerMeta"></span>
+    </div>
+    <div class="audio-player">
+      <button class="play-btn" id="playBtn" onclick="togglePlay()">
+        <svg class="play-icon" viewBox="0 0 16 16"><path d="M4 2l10 6-10 6V2z"/></svg>
+        <svg class="pause-icon" viewBox="0 0 16 16"><rect x="3" y="2" width="4" height="12" rx="1"/><rect x="9" y="2" width="4" height="12" rx="1"/></svg>
+      </button>
+      <div class="progress-track" id="progressTrack" onclick="seekAudio(event)">
+        <div class="progress-fill" id="progressFill"></div>
+      </div>
+      <span class="time-label" id="timeLabel">0:00</span>
+    </div>
+    <div class="player-actions">
+      <button class="action-btn" onclick="downloadAudio()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Download WAV
+      </button>
+      <button class="action-btn" onclick="regenerate()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.86"/></svg>
+        Regenerate
+      </button>
+    </div>
+  </div>
+
+  <!-- Script card -->
+  <div class="card">
+    <div class="card-label">Script</div>
+    <div class="script-wrap">
+      <textarea id="script" placeholder="Type or paste your call script here…&#10;&#10;Example: Hi {customer_name}, your Meesho order has arrived at {store_name}. Pick it up between {pickup_timings}."></textarea>
+    </div>
+    <div class="char-count" id="charCount">0 / 2500</div>
+
+    <!-- Variable insert pills -->
+    <div style="margin-top:10px; font-size:11px; font-weight:600; color:var(--ink3); text-transform:uppercase; letter-spacing:.05em; margin-bottom:6px;">Insert variable</div>
+    <div class="var-pills">
+      <button class="var-pill" onclick="insertVar('{customer_name}')">{customer_name}</button>
+      <button class="var-pill" onclick="insertVar('{store_name}')">{store_name}</button>
+      <button class="var-pill" onclick="insertVar('{pickup_timings}')">{pickup_timings}</button>
+    </div>
+
+    <!-- Template buttons -->
+    <div style="margin-top:14px; font-size:11px; font-weight:600; color:var(--ink3); text-transform:uppercase; letter-spacing:.05em; margin-bottom:6px;">Load template</div>
+    <div class="tpl-row">
+      <button class="tpl-btn" onclick="loadTemplate('en')">English — pickup reminder</button>
+      <button class="tpl-btn" onclick="loadTemplate('hi')">Hindi — pickup reminder</button>
+      <button class="tpl-btn" onclick="loadTemplate('en2')">English — order delayed</button>
+      <button class="tpl-btn" onclick="loadTemplate('hi2')">Hindi — order delayed</button>
+    </div>
+  </div>
+
+  <!-- Voice picker -->
+  <div class="card">
+    <div class="card-label">Voice</div>
+    <div class="voice-grid" id="voiceGrid"></div>
+  </div>
+
+  <!-- Tuning -->
+  <div class="card">
+    <div class="card-label">Fine-tune</div>
+    <div class="tuning-row">
+      <div class="slider-group">
+        <label>Pace <span id="paceVal">1.0×</span></label>
+        <input type="range" id="pace" min="0.5" max="2.0" step="0.1" value="1.0" oninput="document.getElementById('paceVal').textContent=parseFloat(this.value).toFixed(1)+'×'" />
+        <div class="slider-hints"><span>0.5× slow</span><span>2.0× fast</span></div>
+      </div>
+      <div class="slider-group">
+        <label>Pitch <span id="pitchVal">0</span></label>
+        <input type="range" id="pitch" min="-10" max="10" step="1" value="0" oninput="document.getElementById('pitchVal').textContent=(this.value>0?'+':'')+this.value" />
+        <div class="slider-hints"><span>−10 deeper</span><span>+10 higher</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Generate -->
+  <button class="generate-btn" id="generateBtn" onclick="generate()">
+    <div class="spinner"></div>
+    <svg class="btn-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+      <polygon points="5 3 19 12 5 21 5 3"/>
+    </svg>
+    Generate &amp; play
+  </button>
+
+  <!-- History -->
+  <div id="historySection" style="display:none; margin-top:28px;">
+    <div class="card-label" style="margin-bottom:10px; padding-left:2px;">Recent generations</div>
+    <div class="history-list" id="historyList"></div>
+  </div>
+
+</div><!-- /shell -->
+
+<audio id="audioEl" preload="auto"></audio>
+
+<script>
+const VOICES = [
+  { id:'anushka',  label:'Anushka',  gender:'F', lang:'Hindi',    code:'hi-IN' },
+  { id:'arvind',   label:'Arvind',   gender:'M', lang:'Hindi',    code:'hi-IN' },
+  { id:'diya',     label:'Diya',     gender:'F', lang:'Hindi-EN', code:'hi-IN' },
+  { id:'neel',     label:'Neel',     gender:'M', lang:'Hindi-EN', code:'hi-IN' },
+  { id:'maitreyi', label:'Maitreyi', gender:'F', lang:'English',  code:'en-IN' },
+  { id:'yuval',    label:'Yuval',    gender:'M', lang:'English',  code:'en-IN' },
+  { id:'amol',     label:'Amol',     gender:'M', lang:'Marathi',  code:'mr-IN' },
+  { id:'amartya',  label:'Amartya',  gender:'M', lang:'Bengali',  code:'bn-IN' },
+];
+
+const TEMPLATES = {
+  en:  "Hi {customer_name}, your Meesho Store Pickup order has arrived at {store_name}. Please pick it up today between {pickup_timings}.",
+  hi:  "Hi {customer_name}, aapka Meesho Store Pickup order {store_name} par pahunch gaya hai. Aaj hi {pickup_timings} ke beech pickup kar lein.",
+  en2: "Hello {customer_name}, we wanted to let you know that your order at {store_name} is delayed. It will be available for pickup by {pickup_timings}. We apologise for the inconvenience.",
+  hi2: "Namaste {customer_name}, aapke {store_name} ke order mein thodi deri ho gayi hai. Yeh {pickup_timings} tak pickup ke liye available ho jayega. Asuvidhaa ke liye khed hai.",
+};
+
+let selectedVoice = 'anushka';
+let currentBlobUrl = null;
+let currentFilename = 'audio.wav';
+let history = [];
+const audio = document.getElementById('audioEl');
+
+// ── Render voice grid ──
+function renderVoices() {
+  const grid = document.getElementById('voiceGrid');
+  grid.innerHTML = VOICES.map(v => `
+    <div class="voice-card ${v.id===selectedVoice?'active':''}" onclick="selectVoice('${v.id}')" id="vc-${v.id}">
+      <div class="voice-avatar">${v.gender}</div>
+      <div>
+        <div class="voice-name">${v.label}</div>
+        <div class="voice-lang">${v.lang}</div>
+      </div>
+      <span class="voice-check">✓</span>
+    </div>
+  `).join('');
+}
+renderVoices();
+
+function selectVoice(id) {
+  selectedVoice = id;
+  document.querySelectorAll('.voice-card').forEach(c => c.classList.remove('active'));
+  document.getElementById('vc-'+id).classList.add('active');
+}
+
+// ── API key watcher ──
+document.getElementById('apiKey').addEventListener('input', function() {
+  const st = document.getElementById('keyStatus');
+  if (this.value.trim().length > 10) {
+    st.textContent = 'Key set'; st.className = 'key-status set';
+  } else {
+    st.textContent = 'No key'; st.className = 'key-status unset';
+  }
+});
+
+// ── Char counter ──
+document.getElementById('script').addEventListener('input', function() {
+  const el = document.getElementById('charCount');
+  el.textContent = this.value.length + ' / 2500';
+  el.className = 'char-count' + (this.value.length > 2200 ? ' warn' : '');
+});
+
+// ── Variable insert ──
+function insertVar(v) {
+  const ta = document.getElementById('script');
+  const s = ta.selectionStart, e = ta.selectionEnd;
+  ta.value = ta.value.slice(0,s) + v + ta.value.slice(e);
+  ta.selectionStart = ta.selectionEnd = s + v.length;
+  ta.focus();
+  ta.dispatchEvent(new Event('input'));
+}
+
+// ── Template load ──
+function loadTemplate(key) {
+  document.getElementById('script').value = TEMPLATES[key];
+  document.getElementById('script').dispatchEvent(new Event('input'));
+}
+
+// ── Helpers ──
+function showError(msg) {
+  const b = document.getElementById('errorBox');
+  document.getElementById('errorMsg').textContent = msg;
+  b.classList.add('visible');
+  setTimeout(() => b.classList.remove('visible'), 6000);
+}
+function hideError() { document.getElementById('errorBox').classList.remove('visible'); }
+
+function b64ToBlob(b64) {
+  const bin = atob(b64);
+  const buf = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) buf[i] = bin.charCodeAt(i);
+  return new Blob([buf], { type: 'audio/wav' });
+}
+
+function fmtTime(s) {
+  const m = Math.floor(s/60);
+  return m+':'+(Math.floor(s%60)+'').padStart(2,'0');
+}
+
+// ── Audio player ──
+audio.addEventListener('timeupdate', () => {
+  const pct = audio.duration ? (audio.currentTime/audio.duration)*100 : 0;
+  document.getElementById('progressFill').style.width = pct+'%';
+  document.getElementById('timeLabel').textContent =
+    fmtTime(audio.currentTime) + (audio.duration ? ' / '+fmtTime(audio.duration) : '');
+});
+audio.addEventListener('ended', () => {
+  document.getElementById('playBtn').classList.remove('playing');
+  document.getElementById('progressFill').style.width = '0%';
+});
+
+function togglePlay() {
+  if (audio.paused) { audio.play(); document.getElementById('playBtn').classList.add('playing'); }
+  else              { audio.pause(); document.getElementById('playBtn').classList.remove('playing'); }
+}
+
+function seekAudio(e) {
+  if (!audio.duration) return;
+  const rect = e.currentTarget.getBoundingClientRect();
+  audio.currentTime = ((e.clientX - rect.left) / rect.width) * audio.duration;
+}
+
+function downloadAudio() {
+  if (!currentBlobUrl) return;
+  const a = document.createElement('a');
+  a.href = currentBlobUrl;
+  a.download = currentFilename;
+  a.click();
+}
+
+function regenerate() { generate(); }
+
+// ── Main generate ──
+async function generate() {
+  hideError();
+  const apiKey = document.getElementById('apiKey').value.trim();
+  const text   = document.getElementById('script').value.trim();
+
+  if (!apiKey) { showError('Paste your Sarvam AI API key at the top first.'); return; }
+  if (!text)   { showError('Write a script before generating.'); return; }
+  if (text.length > 2500) { showError('Script is too long — max 2500 characters.'); return; }
+
+  const btn = document.getElementById('generateBtn');
+  btn.disabled = true;
+  btn.classList.add('loading');
+  btn.querySelector('.btn-icon') && (btn.querySelector('.btn-icon').style.display = 'none');
+
+  const voice = VOICES.find(v => v.id === selectedVoice);
+  const pace  = parseFloat(document.getElementById('pace').value);
+  const pitch = parseInt(document.getElementById('pitch').value);
+
+  try {
+    const res = await fetch('https://api.sarvam.ai/text-to-speech', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'api-subscription-key': apiKey,
+      },
+      body: JSON.stringify({
+        inputs: [text],
+        target_language_code: voice.code,
+        speaker: voice.id,
+        pitch,
+        pace,
+        loudness: 1.5,
+        speech_sample_rate: 8000,
+        enable_preprocessing: true,
+        model: 'bulbul:v1',
+      }),
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.message || err.detail || `API error ${res.status}`);
+    }
+
+    const data = await res.json();
+    const b64  = data.audios?.[0];
+    if (!b64) throw new Error('No audio returned from Sarvam AI.');
+
+    const blob = b64ToBlob(b64);
+    if (currentBlobUrl) URL.revokeObjectURL(currentBlobUrl);
+    currentBlobUrl = URL.createObjectURL(blob);
+    currentFilename = `${voice.id}_${Date.now()}.wav`;
+
+    // Wire up player
+    audio.src = currentBlobUrl;
+    audio.load();
+    audio.play();
+    document.getElementById('playBtn').classList.add('playing');
+    document.getElementById('progressFill').style.width = '0%';
+
+    // Show player card
+    const card = document.getElementById('playerCard');
+    card.classList.add('visible');
+    document.getElementById('playerMeta').textContent =
+      `${voice.label} · ${voice.lang} · pace ${pace}× · pitch ${pitch>0?'+':''}${pitch}`;
+
+    // Add to history
+    addHistory({ text, voice, pace, pitch, blobUrl: currentBlobUrl, filename: currentFilename });
+
+  } catch(e) {
+    showError(e.message);
+  } finally {
+    btn.disabled = false;
+    btn.classList.remove('loading');
+  }
+}
+
+// ── History ──
+function addHistory(item) {
+  history.unshift(item);
+  if (history.length > 8) history.pop();
+  renderHistory();
+}
+
+function renderHistory() {
+  const sec  = document.getElementById('historySection');
+  const list = document.getElementById('historyList');
+  if (!history.length) { sec.style.display = 'none'; return; }
+  sec.style.display = 'block';
+  list.innerHTML = history.map((h, i) => `
+    <div class="history-item">
+      <div class="h-voice-dot"></div>
+      <div class="h-text">${h.text.replace(/</g,'&lt;').slice(0, 80)}${h.text.length>80?'…':''}</div>
+      <span class="h-meta">${h.voice.label} · ${h.pace}×</span>
+      <button class="h-play" onclick="playHistoryItem(${i})">▶ Play</button>
+    </div>
+  `).join('');
+}
+
+function playHistoryItem(i) {
+  const h = history[i];
+  if (!h) return;
+  audio.src = h.blobUrl;
+  audio.load();
+  audio.play();
+  document.getElementById('playBtn').classList.add('playing');
+  document.getElementById('playerCard').classList.add('visible');
+  document.getElementById('playerMeta').textContent =
+    `${h.voice.label} · ${h.voice.lang} · pace ${h.pace}× · pitch ${h.pitch>0?'+':''}${h.pitch}`;
+  currentBlobUrl  = h.blobUrl;
+  currentFilename = h.filename;
+}
+
+// ── Enter to generate ──
+document.getElementById('script').addEventListener('keydown', e => {
+  if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) generate();
+});
+</script>
+</body>
+</html>
