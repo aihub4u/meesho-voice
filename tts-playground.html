@@ -1,735 +1,420 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 <title>Meesho Voice Platform — Sarvam AI</title>
 <style>
-  :root {
-    --bg:       #F7F6F2;
-    --surface:  #FFFFFF;
-    --border:   #E4E1D9;
-    --border2:  #CBC8BF;
-    --ink:      #1A1916;
-    --ink2:     #6B6860;
-    --ink3:     #A8A49C;
-    --accent:   #5B3FE8;
-    --accent-l: #EAE6FD;
-    --accent-d: #3D29B5;
-    --green:    #0F6E56;
-    --green-l:  #E1F5EE;
-    --red:      #B91C1C;
-    --red-l:    #FEE2E2;
-    --amber:    #854F0B;
-    --amber-l:  #FFF4E0;
-    --radius:   10px;
-    --radius-lg:14px;
-  }
+:root{
+  --bg:#F7F6F2;--surface:#FFFFFF;--border:#E4E1D9;--border2:#CBC8BF;
+  --ink:#1A1916;--ink2:#6B6860;--ink3:#A8A49C;
+  --accent:#5B3FE8;--accent-l:#EAE6FD;--accent-d:#3D29B5;
+  --green:#0F6E56;--green-l:#E1F5EE;
+  --red:#B91C1C;--red-l:#FEE2E2;
+  --amber:#854F0B;--amber-l:#FFF4E0;
+  --r:10px;--rl:14px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--ink);min-height:100vh;line-height:1.5;}
 
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+/* ── Layout ── */
+.shell{max-width:860px;margin:0 auto;padding:28px 20px 60px;}
 
-  body {
-    font-family: 'Inter', system-ui, -apple-system, sans-serif;
-    background: var(--bg);
-    color: var(--ink);
-    min-height: 100vh;
-    line-height: 1.5;
-  }
+/* ── Header ── */
+.hdr{display:flex;align-items:center;gap:12px;margin-bottom:24px;}
+.hdr-logo{width:38px;height:38px;background:var(--accent);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.hdr h1{font-size:18px;font-weight:700;letter-spacing:-.03em;}
+.hdr p{font-size:13px;color:var(--ink2);margin-top:1px;}
 
-  /* ── Layout ── */
-  .shell {
-    max-width: 780px;
-    margin: 0 auto;
-    padding: 32px 20px 60px;
-  }
+/* ── API key bar (always visible) ── */
+.key-bar{display:flex;gap:8px;align-items:center;background:var(--amber-l);border:1px solid #FAC775;border-radius:var(--r);padding:10px 14px;margin-bottom:20px;}
+.key-bar svg{flex-shrink:0;color:var(--amber);}
+.key-bar input{flex:1;border:none;background:transparent;font-size:13px;font-family:monospace;color:var(--ink);outline:none;min-width:0;}
+.key-bar input::placeholder{color:var(--ink3);font-family:system-ui;}
+.key-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.key-dot.set{background:#22C55E;}
+.key-dot.unset{background:#EF4444;}
+.key-lbl{font-size:11px;font-weight:600;color:var(--amber);white-space:nowrap;}
 
-  /* ── Header ── */
-  .header {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 32px;
-  }
-  .logo {
-    width: 38px; height: 38px;
-    background: var(--accent);
-    border-radius: 10px;
-    display: flex; align-items: center; justify-content: center;
-    flex-shrink: 0;
-  }
-  .logo svg { width: 20px; height: 20px; }
-  .header-text h1 { font-size: 18px; font-weight: 700; letter-spacing: -0.03em; color: var(--ink); }
-  .header-text p  { font-size: 13px; color: var(--ink2); margin-top: 1px; }
+/* ── Tabs ── */
+.tab-nav{display:flex;gap:0;border-bottom:2px solid var(--border);margin-bottom:22px;}
+.tab-btn{padding:10px 22px;font-size:13px;font-weight:500;color:var(--ink2);background:none;border:none;border-bottom:2.5px solid transparent;margin-bottom:-2px;cursor:pointer;transition:all .15s;white-space:nowrap;}
+.tab-btn.active{color:var(--accent);border-bottom-color:var(--accent);font-weight:700;}
+.tab-pane{display:none;}
+.tab-pane.active{display:block;}
 
-  /* ── Card ── */
-  .card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-lg);
-    padding: 22px 24px;
-    margin-bottom: 14px;
-  }
-  .card-label {
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: .06em;
-    text-transform: uppercase;
-    color: var(--ink3);
-    margin-bottom: 12px;
-  }
+/* ── Card ── */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);padding:20px 22px;margin-bottom:14px;}
+.card-lbl{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink3);margin-bottom:12px;}
 
-  /* ── API key strip ── */
-  .key-strip {
-    display: flex;
-    gap: 8px;
-    align-items: center;
-    background: var(--amber-l);
-    border: 1px solid #FAC775;
-    border-radius: var(--radius);
-    padding: 10px 14px;
-    margin-bottom: 14px;
-  }
-  .key-strip svg { flex-shrink: 0; color: var(--amber); }
-  .key-strip input {
-    flex: 1;
-    border: none;
-    background: transparent;
-    font-size: 13px;
-    font-family: 'Courier New', monospace;
-    color: var(--ink);
-    outline: none;
-    min-width: 0;
-  }
-  .key-strip input::placeholder { color: var(--ink3); font-family: system-ui; }
-  .key-status {
-    font-size: 11px;
-    font-weight: 600;
-    padding: 3px 9px;
-    border-radius: 20px;
-    flex-shrink: 0;
-  }
-  .key-status.set   { background: var(--green-l); color: var(--green); }
-  .key-status.unset { background: #FEE2E2; color: var(--red); }
+/* ── Script textarea ── */
+textarea#script{width:100%;min-height:110px;padding:13px 15px;font-size:14px;font-family:'Inter',system-ui;color:var(--ink);background:var(--bg);border:1.5px solid var(--border);border-radius:var(--r);resize:vertical;outline:none;transition:border-color .15s;line-height:1.65;}
+textarea#script:focus{border-color:var(--accent);}
+.var-pills{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;}
+.var-pill{font-size:11px;font-weight:600;font-family:monospace;background:var(--accent-l);color:var(--accent-d);padding:3px 9px;border-radius:5px;cursor:pointer;border:none;}
+.var-pill:hover{background:#D5CEFC;}
+.char-count{font-size:11px;color:var(--ink3);text-align:right;margin-top:5px;}
+.tpl-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;}
+.tpl-btn{font-size:12px;font-weight:500;padding:5px 12px;border-radius:6px;border:1px solid var(--border2);background:var(--surface);color:var(--ink2);cursor:pointer;transition:all .12s;}
+.tpl-btn.active{background:var(--accent-l);border-color:var(--accent);color:var(--accent-d);font-weight:700;}
+.tpl-btn:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-l);}
 
-  /* ── Script textarea ── */
-  .script-wrap { position: relative; }
-  textarea#script {
-    width: 100%;
-    min-height: 130px;
-    padding: 14px 16px;
-    font-size: 15px;
-    font-family: 'Inter', system-ui, sans-serif;
-    color: var(--ink);
-    background: var(--bg);
-    border: 1.5px solid var(--border);
-    border-radius: var(--radius);
-    resize: vertical;
-    outline: none;
-    transition: border-color .15s;
-    line-height: 1.65;
-  }
-  textarea#script:focus { border-color: var(--accent); }
+/* ── Language selector ── */
+.lang-tabs{display:flex;gap:0;border:1.5px solid var(--border2);border-radius:var(--r);overflow:hidden;margin-bottom:14px;}
+.lang-tab{flex:1;padding:8px 4px;font-size:12px;font-weight:600;text-align:center;cursor:pointer;background:var(--surface);color:var(--ink2);border:none;transition:all .12s;}
+.lang-tab.active{background:var(--accent);color:#fff;}
+.lang-tab:not(:last-child){border-right:1.5px solid var(--border2);}
 
-  .var-pills {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-    margin-top: 8px;
-  }
-  .var-pill {
-    font-size: 11px;
-    font-weight: 600;
-    font-family: 'Courier New', monospace;
-    background: var(--accent-l);
-    color: var(--accent-d);
-    padding: 3px 9px;
-    border-radius: 5px;
-    cursor: pointer;
-    border: none;
-    transition: background .12s;
-    letter-spacing: .01em;
-  }
-  .var-pill:hover { background: #D5CEFC; }
+/* ── Live preview box ── */
+.live-preview{background:var(--bg);border:1.5px solid var(--border);border-radius:var(--r);padding:12px 14px;margin-top:12px;min-height:52px;}
+.live-preview-lbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--ink3);margin-bottom:6px;}
+.live-preview-text{font-size:13px;color:var(--ink);line-height:1.65;font-style:italic;}
+.live-preview-text.placeholder{color:var(--ink3);font-style:normal;}
 
-  .char-count {
-    font-size: 11px;
-    color: var(--ink3);
-    text-align: right;
-    margin-top: 5px;
-  }
-  .char-count.warn { color: var(--amber); }
+/* ── CSV column chips (dynamic) ── */
+.csv-var-pills{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px;}
+.csv-var-pill{font-size:11px;font-weight:600;font-family:monospace;background:#E0F2FE;color:#0369A1;padding:3px 9px;border-radius:5px;cursor:pointer;border:1px solid #BAE6FD;}
+.csv-var-pill:hover{background:#BAE6FD;}
 
-  /* ── Template row ── */
-  .tpl-row {
-    display: flex;
-    gap: 8px;
-    margin-top: 10px;
-    flex-wrap: wrap;
-  }
-  .tpl-btn {
-    font-size: 12px;
-    font-weight: 500;
-    padding: 5px 12px;
-    border-radius: 6px;
-    border: 1px solid var(--border2);
-    background: var(--surface);
-    color: var(--ink2);
-    cursor: pointer;
-    transition: all .12s;
-  }
-  .tpl-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-l); }
+/* ── Voice grid ── */
+.voice-filter{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap;}
+.flt-btn{font-size:12px;font-weight:500;padding:5px 12px;border-radius:20px;border:1.5px solid var(--border2);background:var(--surface);color:var(--ink2);cursor:pointer;}
+.flt-btn.active{background:var(--accent);color:#fff;border-color:var(--accent);}
+.voice-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px;}
+.vc{display:flex;align-items:center;gap:8px;padding:9px 11px;border-radius:var(--r);border:1.5px solid var(--border);background:var(--surface);cursor:pointer;transition:all .12s;}
+.vc:hover{border-color:var(--accent);background:var(--accent-l);}
+.vc.active{border-color:var(--accent);background:var(--accent-l);box-shadow:0 0 0 3px rgba(91,63,232,.1);}
+.vc-av{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;}
+.vc.active .vc-av{background:var(--accent);color:#fff;}
+.vc:not(.active) .vc-av{background:var(--border);color:var(--ink2);}
+.vc-name{font-size:12px;font-weight:600;color:var(--ink);}
+.vc-lang{font-size:10px;color:var(--ink3);margin-top:1px;}
+.vc.hidden{display:none;}
 
-  /* ── Voice grid ── */
-  .voice-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-    gap: 8px;
-  }
-  .voice-card {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 10px 12px;
-    border-radius: var(--radius);
-    border: 1.5px solid var(--border);
-    background: var(--surface);
-    cursor: pointer;
-    transition: all .12s;
-    text-align: left;
-  }
-  .voice-card:hover { border-color: var(--accent); background: var(--accent-l); }
-  .voice-card.active {
-    border-color: var(--accent);
-    background: var(--accent-l);
-    box-shadow: 0 0 0 3px rgba(91,63,232,.1);
-  }
-  .voice-avatar {
-    width: 32px; height: 32px;
-    border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 12px;
-    font-weight: 700;
-    flex-shrink: 0;
-    transition: background .12s, color .12s;
-  }
-  .voice-card.active .voice-avatar { background: var(--accent); color: #fff; }
-  .voice-card:not(.active) .voice-avatar { background: var(--border); color: var(--ink2); }
-  .voice-name  { font-size: 13px; font-weight: 600; color: var(--ink); }
-  .voice-lang  { font-size: 11px; color: var(--ink3); margin-top: 1px; }
-  .voice-check { margin-left: auto; font-size: 14px; color: var(--accent); display: none; }
-  .filter-btn { font-size: 12px; font-weight: 500; padding: 5px 12px; border-radius: 20px; border: 1.5px solid var(--border2); background: var(--surface); color: var(--ink2); cursor: pointer; transition: all .12s; }
-  .filter-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
-  .voice-card.hidden { display: none; }
-  .voice-card.active .voice-check { display: block; }
+/* ── Sample rate ── */
+.sr-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px;}
+.src{padding:10px 12px;border-radius:var(--r);border:1.5px solid var(--border);background:var(--surface);cursor:pointer;transition:all .12s;text-align:center;}
+.src:hover,.src.active{border-color:var(--accent);background:var(--accent-l);}
+.src.active{box-shadow:0 0 0 3px rgba(91,63,232,.1);}
+.src-hz{font-size:14px;font-weight:700;color:var(--ink);}
+.src-lbl{font-size:10px;color:var(--ink3);margin-top:2px;}
+.src.active .src-hz{color:var(--accent-d);}
 
-  /* ── Sample rate picker ── */
-  .sr-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-    gap: 8px;
-  }
-  .sr-card {
-    padding: 10px 12px;
-    border-radius: var(--radius);
-    border: 1.5px solid var(--border);
-    background: var(--surface);
-    cursor: pointer;
-    transition: all .12s;
-    text-align: center;
-  }
-  .sr-card:hover { border-color: var(--accent); background: var(--accent-l); }
-  .sr-card.active { border-color: var(--accent); background: var(--accent-l); box-shadow: 0 0 0 3px rgba(91,63,232,.1); }
-  .sr-rate { font-size: 14px; font-weight: 700; color: var(--ink); }
-  .sr-label { font-size: 11px; color: var(--ink3); margin-top: 2px; }
-  .sr-card.active .sr-rate { color: var(--accent-d); }
-  .sr-card.active .sr-label { color: var(--accent); }
+/* ── Generate button (tester) ── */
+.gen-btn{width:100%;padding:14px;font-size:14px;font-weight:700;background:var(--accent);color:#fff;border:none;border-radius:var(--r);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:9px;transition:background .15s;}
+.gen-btn:hover:not(:disabled){background:var(--accent-d);}
+.gen-btn:disabled{background:#C8C3F5;cursor:not-allowed;}
+.spinner{width:16px;height:16px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;display:none;}
+.gen-btn.loading .spinner{display:block;}
+.gen-btn.loading .btn-icon{display:none;}
+@keyframes spin{to{transform:rotate(360deg);}}
 
-  /* ── Generate button ── */
-  .generate-btn {
-    width: 100%;
-    padding: 15px;
-    font-size: 15px;
-    font-weight: 700;
-    letter-spacing: -.01em;
-    background: var(--accent);
-    color: #fff;
-    border: none;
-    border-radius: var(--radius);
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 9px;
-    transition: background .15s, transform .1s;
-    margin-top: 4px;
-  }
-  .generate-btn:hover:not(:disabled) { background: var(--accent-d); }
-  .generate-btn:active:not(:disabled) { transform: scale(.99); }
-  .generate-btn:disabled { background: #C8C3F5; cursor: not-allowed; }
-  .generate-btn .spinner {
-    width: 17px; height: 17px;
-    border: 2px solid rgba(255,255,255,.3);
-    border-top-color: #fff;
-    border-radius: 50%;
-    animation: spin .7s linear infinite;
-    display: none;
-  }
-  .generate-btn.loading .spinner { display: block; }
-  .generate-btn.loading .btn-icon { display: none; }
-  @keyframes spin { to { transform: rotate(360deg); } }
+/* ── Player ── */
+.player-card{background:var(--green-l);border:1px solid #9FE1CB;border-radius:var(--rl);padding:16px 18px;margin-bottom:14px;display:none;}
+.player-card.visible{display:block;}
+.player-top{display:flex;align-items:center;gap:10px;margin-bottom:12px;}
+.player-badge{font-size:11px;font-weight:700;color:var(--green);background:rgba(15,110,86,.12);padding:3px 9px;border-radius:20px;}
+.player-meta{font-size:12px;color:#0D5A48;margin-left:auto;}
+.audio-player{display:flex;align-items:center;gap:10px;background:#fff;border:1px solid #9FE1CB;border-radius:var(--r);padding:9px 13px;}
+.play-btn{width:34px;height:34px;border-radius:50%;background:var(--accent);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.play-btn svg{width:13px;height:13px;fill:#fff;margin-left:2px;}
+.play-btn.playing svg.play-icon{display:none;}
+.play-btn:not(.playing) svg.pause-icon{display:none;}
+.prog-track{flex:1;height:4px;background:var(--border);border-radius:4px;cursor:pointer;}
+.prog-fill{height:100%;background:var(--accent);border-radius:4px;width:0%;transition:width .1s linear;pointer-events:none;}
+.time-lbl{font-size:11px;color:var(--ink3);white-space:nowrap;}
+.act-row{display:flex;gap:8px;margin-top:10px;}
+.act-btn{font-size:12px;font-weight:500;padding:6px 13px;border-radius:7px;border:1px solid #9FE1CB;background:#fff;color:var(--green);cursor:pointer;display:flex;align-items:center;gap:5px;}
+.act-btn:hover{background:var(--green-l);}
 
-  /* ── Player ── */
-  .player-card {
-    background: var(--green-l);
-    border: 1px solid #9FE1CB;
-    border-radius: var(--radius-lg);
-    padding: 18px 20px;
-    margin-bottom: 14px;
-    display: none;
-  }
-  .player-card.visible { display: block; }
+/* ── History ── */
+.hist-item{display:flex;align-items:center;gap:10px;padding:9px 13px;border-radius:var(--r);border:1px solid var(--border);background:var(--surface);margin-bottom:7px;cursor:pointer;}
+.hist-item:hover{border-color:var(--accent);}
+.h-dot{width:7px;height:7px;border-radius:50%;background:var(--accent);flex-shrink:0;}
+.h-txt{flex:1;font-size:12px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;}
+.h-meta{font-size:11px;color:var(--ink3);flex-shrink:0;}
+.h-play{font-size:11px;font-weight:600;color:var(--accent);background:var(--accent-l);border:none;padding:3px 9px;border-radius:5px;cursor:pointer;flex-shrink:0;}
 
-  .player-top {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 14px;
-  }
-  .player-badge {
-    font-size: 11px;
-    font-weight: 700;
-    color: var(--green);
-    background: rgba(15,110,86,.12);
-    padding: 3px 9px;
-    border-radius: 20px;
-  }
-  .player-meta { font-size: 12px; color: #0D5A48; margin-left: auto; }
+/* ── Error box ── */
+.err-box{background:var(--red-l);border:1px solid #FECACA;border-radius:var(--r);padding:11px 13px;font-size:13px;color:var(--red);margin-bottom:14px;display:none;align-items:flex-start;gap:8px;}
+.err-box.show{display:flex;}
 
-  /* Custom audio player */
-  .audio-player {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    background: #fff;
-    border: 1px solid #9FE1CB;
-    border-radius: var(--radius);
-    padding: 10px 14px;
-  }
-  .play-btn {
-    width: 36px; height: 36px;
-    border-radius: 50%;
-    background: var(--accent);
-    border: none;
-    cursor: pointer;
-    display: flex; align-items: center; justify-content: center;
-    flex-shrink: 0;
-    transition: background .12s, transform .1s;
-  }
-  .play-btn:hover { background: var(--accent-d); }
-  .play-btn:active { transform: scale(.95); }
-  .play-btn svg { width: 14px; height: 14px; fill: #fff; margin-left: 2px; }
-  .play-btn.playing svg.play-icon { display: none; }
-  .play-btn:not(.playing) svg.pause-icon { display: none; }
+/* ── Waveform ── */
+.waveform{display:none;align-items:center;gap:3px;height:22px;}
+.waveform.active{display:flex;}
+.waveform span{width:3px;border-radius:3px;background:var(--accent);animation:wave 1s ease-in-out infinite;}
+.waveform span:nth-child(1){height:6px;animation-delay:0s;}
+.waveform span:nth-child(2){height:14px;animation-delay:.1s;}
+.waveform span:nth-child(3){height:20px;animation-delay:.2s;}
+.waveform span:nth-child(4){height:14px;animation-delay:.3s;}
+.waveform span:nth-child(5){height:8px;animation-delay:.4s;}
+.waveform span:nth-child(6){height:16px;animation-delay:.15s;}
+.waveform span:nth-child(7){height:10px;animation-delay:.25s;}
+@keyframes wave{0%,100%{transform:scaleY(1);opacity:.7;}50%{transform:scaleY(.35);opacity:1;}}
 
-  .progress-track {
-    flex: 1;
-    height: 4px;
-    background: var(--border);
-    border-radius: 4px;
-    cursor: pointer;
-    position: relative;
-  }
-  .progress-fill {
-    height: 100%;
-    background: var(--accent);
-    border-radius: 4px;
-    width: 0%;
-    transition: width .1s linear;
-    pointer-events: none;
-  }
-  .time-label { font-size: 11px; color: var(--ink3); font-variant-numeric: tabular-nums; white-space: nowrap; }
+/* ══ BULK TAB ══ */
+.col-spec{background:var(--accent-l);border:1px solid #C8C3F5;border-radius:var(--r);padding:12px 16px;margin-bottom:14px;}
+.col-spec-title{font-size:11px;font-weight:700;color:var(--accent-d);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;}
+.col-spec-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;}
+.ctag{display:inline-block;font-family:monospace;font-size:11px;font-weight:700;background:#fff;color:var(--accent-d);padding:1px 7px;border-radius:4px;border:1px solid #C8C3F5;}
+.cdesc{font-size:12px;color:var(--ink2);}
 
-  .player-actions {
-    display: flex;
-    gap: 8px;
-    margin-top: 12px;
-  }
-  .action-btn {
-    font-size: 12px;
-    font-weight: 500;
-    padding: 6px 14px;
-    border-radius: 7px;
-    border: 1px solid #9FE1CB;
-    background: #fff;
-    color: var(--green);
-    cursor: pointer;
-    transition: all .12s;
-    display: flex;
-    align-items: center;
-    gap: 5px;
-  }
-  .action-btn:hover { background: var(--green-l); border-color: var(--green); }
+.drop-zone{border:2px dashed var(--border2);border-radius:var(--rl);padding:32px 20px;text-align:center;cursor:pointer;background:var(--bg);transition:all .15s;margin-bottom:12px;}
+.drop-zone:hover,.drop-zone.over{border-color:var(--accent);background:var(--accent-l);}
+.dz-icon{font-size:30px;margin-bottom:8px;}
+.dz-title{font-size:14px;font-weight:600;color:var(--ink);}
+.dz-sub{font-size:12px;color:var(--ink3);margin-top:4px;}
 
-  /* ── History ── */
-  .history-list { display: flex; flex-direction: column; gap: 8px; }
-  .history-item {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 10px 14px;
-    border-radius: var(--radius);
-    border: 1px solid var(--border);
-    background: var(--surface);
-    cursor: pointer;
-    transition: border-color .12s;
-  }
-  .history-item:hover { border-color: var(--accent); }
-  .h-voice-dot {
-    width: 8px; height: 8px;
-    border-radius: 50%;
-    background: var(--accent);
-    flex-shrink: 0;
-  }
-  .h-text {
-    flex: 1;
-    font-size: 13px;
-    color: var(--ink);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    min-width: 0;
-  }
-  .h-meta { font-size: 11px; color: var(--ink3); flex-shrink: 0; }
-  .h-play {
-    font-size: 11px;
-    font-weight: 600;
-    color: var(--accent);
-    background: var(--accent-l);
-    border: none;
-    padding: 3px 10px;
-    border-radius: 5px;
-    cursor: pointer;
-    flex-shrink: 0;
-  }
+.btn-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;}
+.btn-sec{padding:8px 16px;background:var(--surface);color:var(--ink2);border:1.5px solid var(--border2);border-radius:var(--r);font-size:13px;font-weight:500;cursor:pointer;transition:all .15s;text-decoration:none;display:inline-flex;align-items:center;}
+.btn-sec:hover{border-color:var(--accent);color:var(--accent);}
+.btn-pri{padding:11px 20px;background:var(--accent);color:#fff;border:none;border-radius:var(--r);font-size:13px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:7px;transition:background .15s;}
+.btn-pri:hover:not(:disabled){background:var(--accent-d);}
+.btn-pri:disabled{background:#C8C3F5;cursor:not-allowed;}
 
-  /* ── Error ── */
-  .error-box {
-    background: var(--red-l);
-    border: 1px solid #FECACA;
-    border-radius: var(--radius);
-    padding: 12px 14px;
-    font-size: 13px;
-    color: var(--red);
-    margin-bottom: 14px;
-    display: none;
-    align-items: flex-start;
-    gap: 8px;
-  }
-  .error-box.visible { display: flex; }
-  .error-box svg { flex-shrink: 0; margin-top: 1px; }
+/* bulk progress */
+.bulk-prog-wrap{margin:12px 0;}
+.bulk-prog-bar{height:6px;background:var(--border);border-radius:6px;overflow:hidden;}
+.bulk-prog-fill{height:100%;background:var(--accent);border-radius:6px;width:0%;transition:width .4s;}
+.bulk-stats{display:flex;gap:16px;margin-top:7px;font-size:12px;color:var(--ink2);}
+.bulk-stats b{color:var(--ink);}
 
-  /* ── Waveform animation (decorative, while generating) ── */
-  .waveform {
-    display: none;
-    align-items: center;
-    gap: 3px;
-    height: 24px;
-  }
-  .waveform.active { display: flex; }
-  .waveform span {
-    width: 3px;
-    border-radius: 3px;
-    background: var(--accent);
-    animation: wave 1s ease-in-out infinite;
-  }
-  .waveform span:nth-child(1) { height: 6px;  animation-delay: 0s; }
-  .waveform span:nth-child(2) { height: 14px; animation-delay: .1s; }
-  .waveform span:nth-child(3) { height: 20px; animation-delay: .2s; }
-  .waveform span:nth-child(4) { height: 14px; animation-delay: .3s; }
-  .waveform span:nth-child(5) { height: 8px;  animation-delay: .4s; }
-  .waveform span:nth-child(6) { height: 16px; animation-delay: .15s; }
-  .waveform span:nth-child(7) { height: 10px; animation-delay: .25s; }
-  @keyframes wave {
-    0%, 100% { transform: scaleY(1); opacity: .7; }
-    50%       { transform: scaleY(.35); opacity: 1; }
-  }
+/* csv table */
+.tbl-wrap{overflow-x:auto;border-radius:var(--r);border:1px solid var(--border);margin-bottom:14px;}
+table.csv-tbl{width:100%;border-collapse:collapse;font-size:13px;}
+table.csv-tbl th{padding:9px 13px;text-align:left;font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--ink2);background:var(--bg);border-bottom:1px solid var(--border);white-space:nowrap;}
+table.csv-tbl td{padding:9px 13px;color:var(--ink);border-bottom:1px solid var(--border);vertical-align:middle;}
+table.csv-tbl tr:last-child td{border-bottom:none;}
+.preview-cell{font-size:12px;color:var(--ink2);font-style:italic;max-width:280px;}
 
+.sbadge{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;padding:2px 9px;border-radius:20px;white-space:nowrap;}
+.sb-pending{background:#F0EFF9;color:var(--accent);}
+.sb-gen{background:var(--amber-l);color:var(--amber);}
+.sb-done{background:var(--green-l);color:var(--green);}
+.sb-err{background:var(--red-l);color:var(--red);}
 
-  /* ── Tabs ── */
-  .tab-nav { display:flex; gap:0; border-bottom:2px solid var(--border); margin-bottom:22px; }
-  .tab-btn { padding:10px 20px; font-size:13px; font-weight:500; color:var(--ink2); background:none; border:none; border-bottom:2.5px solid transparent; margin-bottom:-2px; cursor:pointer; transition:all .15s; white-space:nowrap; }
-  .tab-btn.active { color:var(--accent); border-bottom-color:var(--accent); font-weight:700; }
-  .tab-btn:hover:not(.active) { color:var(--ink); }
-  .tab-pane { display:none; }
-  .tab-pane.active { display:block; }
+audio.mini{height:28px;width:170px;vertical-align:middle;}
+.dl-btn{font-size:11px;font-weight:600;padding:3px 10px;border-radius:5px;border:1px solid var(--border2);background:var(--surface);color:var(--ink2);cursor:pointer;text-decoration:none;}
+.dl-btn:hover{border-color:var(--accent);color:var(--accent);}
 
-  /* ── CSV upload zone ── */
-  .drop-zone {
-    border:2px dashed var(--border2); border-radius:var(--radius-lg);
-    padding:36px 24px; text-align:center; cursor:pointer;
-    background:var(--bg); transition:all .15s; margin-bottom:14px;
-  }
-  .drop-zone:hover, .drop-zone.over { border-color:var(--accent); background:var(--accent-l); }
-  .drop-zone .dz-icon { font-size:32px; margin-bottom:8px; }
-  .drop-zone .dz-title { font-size:14px; font-weight:600; color:var(--ink); }
-  .drop-zone .dz-sub   { font-size:12px; color:var(--ink3); margin-top:4px; }
+/* info note */
+.info-note{background:var(--accent-l);border:1px solid #C8C3F5;border-radius:var(--r);padding:10px 14px;font-size:12px;color:var(--accent-d);margin-bottom:14px;}
 
-  /* ── CSV preview table ── */
-  .csv-table-wrap { overflow-x:auto; border-radius:var(--radius); border:1px solid var(--border); margin-bottom:14px; }
-  table.csv-table { width:100%; border-collapse:collapse; font-size:13px; }
-  table.csv-table th { padding:9px 14px; text-align:left; font-weight:700; font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:var(--ink2); background:var(--bg); border-bottom:1px solid var(--border); white-space:nowrap; }
-  table.csv-table td { padding:9px 14px; color:var(--ink); border-bottom:1px solid var(--border); vertical-align:top; }
-  table.csv-table tr:last-child td { border-bottom:none; }
-  table.csv-table tr:hover td { background:var(--accent-l); }
-  .preview-col { font-size:12px; color:var(--ink2); font-style:italic; max-width:260px; }
-
-  /* ── Bulk row status ── */
-  .status-badge { display:inline-flex; align-items:center; gap:4px; font-size:11px; font-weight:600; padding:2px 9px; border-radius:20px; white-space:nowrap; }
-  .status-pending   { background:#F0EFF9; color:var(--accent); }
-  .status-generating{ background:#FFF4E0; color:var(--amber); }
-  .status-done      { background:var(--green-l); color:var(--green); }
-  .status-error     { background:var(--red-l); color:var(--red); }
-
-  /* ── Bulk progress ── */
-  .bulk-progress-wrap { margin:14px 0; }
-  .bulk-progress-bar  { height:6px; background:var(--border); border-radius:6px; overflow:hidden; }
-  .bulk-progress-fill { height:100%; background:var(--accent); border-radius:6px; width:0%; transition:width .4s; }
-  .bulk-stats { display:flex; gap:12px; margin-top:8px; font-size:12px; color:var(--ink2); }
-  .bulk-stats b { color:var(--ink); }
-
-  /* ── Inline audio mini ── */
-  audio.mini { height:28px; width:180px; vertical-align:middle; }
-
-  /* ── Column spec box ── */
-  .col-spec { background:var(--accent-l); border:1px solid #C8C3F5; border-radius:var(--radius); padding:12px 16px; margin-bottom:14px; }
-  .col-spec-title { font-size:11px; font-weight:700; color:var(--accent-d); text-transform:uppercase; letter-spacing:.05em; margin-bottom:8px; }
-  .col-spec-grid { display:grid; grid-template-columns:1fr 1fr; gap:6px; }
-  .col-tag { display:inline-block; font-family:monospace; font-size:11px; font-weight:700; background:white; color:var(--accent-d); padding:1px 7px; border-radius:4px; border:1px solid #C8C3F5; }
-  .col-desc { font-size:12px; color:var(--ink2); }
-
-  /* ── Action row ── */
-  .action-row { display:flex; gap:8px; flex-wrap:wrap; margin-top:14px; }
-  .btn-primary { padding:10px 20px; background:var(--accent); color:#fff; border:none; border-radius:var(--radius); font-size:13px; font-weight:700; cursor:pointer; display:flex; align-items:center; gap:7px; transition:background .15s; }
-  .btn-primary:hover:not(:disabled) { background:var(--accent-d); }
-  .btn-primary:disabled { background:#C8C3F5; cursor:not-allowed; }
-  .btn-secondary { padding:10px 16px; background:var(--surface); color:var(--ink2); border:1.5px solid var(--border2); border-radius:var(--radius); font-size:13px; font-weight:500; cursor:pointer; transition:all .15s; }
-  .btn-secondary:hover { border-color:var(--accent); color:var(--accent); }
-  .btn-sm { padding:5px 11px; font-size:12px; border-radius:6px; border:1px solid var(--border2); background:var(--surface); color:var(--ink2); cursor:pointer; }
-  .btn-sm:hover { border-color:var(--accent); color:var(--accent); }
-
-  @media(max-width:520px){
-    .col-spec-grid { grid-template-columns:1fr; }
-    .bulk-stats { flex-wrap:wrap; gap:8px; }
-  }
-
-  @media (max-width: 520px) {
-    .tuning-row { grid-template-columns: 1fr; }
-    .voice-grid { grid-template-columns: repeat(2, 1fr); }
-    .shell { padding: 20px 14px 40px; }
-  }
+@media(max-width:560px){
+  .col-spec-grid{grid-template-columns:1fr;}
+  .voice-grid{grid-template-columns:repeat(2,1fr);}
+  .sr-grid{grid-template-columns:repeat(2,1fr);}
+  .bulk-stats{flex-wrap:wrap;gap:8px;}
+  .shell{padding:16px 12px 40px;}
+}
 </style>
 </head>
 <body>
 <div class="shell">
 
   <!-- Header -->
-  <div class="header">
-    <div class="logo">
-      <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+  <div class="hdr">
+    <div class="hdr-logo">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
         <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/>
         <path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v3M8 22h8"/>
       </svg>
     </div>
-    <div class="header-text">
+    <div>
       <h1>Meesho Voice Platform</h1>
       <p>Sarvam AI bulbul:v3 · Script tester &amp; bulk CSV generator</p>
     </div>
   </div>
 
-  <!-- Tab nav -->
+  <!-- API Key — always visible -->
+  <div class="key-bar">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+    <input type="password" id="apiKey" placeholder="Paste your Sarvam AI API key (api-subscription-key)" autocomplete="off" oninput="onKeyInput()"/>
+    <div class="key-dot unset" id="keyDot"></div>
+    <span class="key-lbl" id="keyLbl">No key set</span>
+  </div>
+
+  <!-- Tabs -->
   <div class="tab-nav">
     <button class="tab-btn active" onclick="switchTab('tester',this)">🎙 Script tester</button>
     <button class="tab-btn" onclick="switchTab('bulk',this)">📋 Bulk CSV generator</button>
   </div>
 
-  <!-- ══ TAB: TESTER ══ -->
+  <!-- ══════════════ TAB 1: TESTER ══════════════ -->
   <div class="tab-pane active" id="tab-tester">
 
-  <!-- API Key -->
-  <div class="key-strip">
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-    <input type="password" id="apiKey" placeholder="Paste your Sarvam AI API key here (api-subscription-key)" autocomplete="off" />
-    <span class="key-status unset" id="keyStatus">No key</span>
-  </div>
+    <!-- Error -->
+    <div class="err-box" id="errBox">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      <span id="errMsg"></span>
+    </div>
 
-  <!-- Error box -->
-  <div class="error-box" id="errorBox">
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-    <span id="errorMsg"></span>
-  </div>
-
-  <!-- Player (shown after generation) -->
-  <div class="player-card" id="playerCard">
-    <div class="player-top">
-      <span class="player-badge">✓ Audio ready</span>
-      <div class="waveform active" id="waveAnim">
-        <span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+    <!-- Player -->
+    <div class="player-card" id="playerCard">
+      <div class="player-top">
+        <span class="player-badge">✓ Audio ready</span>
+        <div class="waveform active"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+        <span class="player-meta" id="playerMeta"></span>
       </div>
-      <span class="player-meta" id="playerMeta"></span>
-    </div>
-    <div class="audio-player">
-      <button class="play-btn" id="playBtn" onclick="togglePlay()">
-        <svg class="play-icon" viewBox="0 0 16 16"><path d="M4 2l10 6-10 6V2z"/></svg>
-        <svg class="pause-icon" viewBox="0 0 16 16"><rect x="3" y="2" width="4" height="12" rx="1"/><rect x="9" y="2" width="4" height="12" rx="1"/></svg>
-      </button>
-      <div class="progress-track" id="progressTrack" onclick="seekAudio(event)">
-        <div class="progress-fill" id="progressFill"></div>
+      <div class="audio-player">
+        <button class="play-btn" id="playBtn" onclick="togglePlay()">
+          <svg class="play-icon" viewBox="0 0 16 16"><path d="M4 2l10 6-10 6V2z"/></svg>
+          <svg class="pause-icon" viewBox="0 0 16 16"><rect x="3" y="2" width="4" height="12" rx="1"/><rect x="9" y="2" width="4" height="12" rx="1"/></svg>
+        </button>
+        <div class="prog-track" onclick="seekAudio(event)"><div class="prog-fill" id="progFill"></div></div>
+        <span class="time-lbl" id="timeLbl">0:00</span>
       </div>
-      <span class="time-label" id="timeLabel">0:00</span>
-    </div>
-    <div class="player-actions">
-      <button class="action-btn" onclick="downloadAudio()">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-        Download WAV
-      </button>
-      <button class="action-btn" onclick="regenerate()">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.86"/></svg>
-        Regenerate
-      </button>
-    </div>
-  </div>
-
-  <!-- Script card -->
-  <div class="card">
-    <div class="card-label">Script</div>
-    <div class="script-wrap">
-      <textarea id="script" placeholder="Type or paste your call script here…&#10;&#10;Example: Hi {customer_name}, your Meesho order has arrived at {store_name}. Pick it up between {pickup_timings}."></textarea>
-    </div>
-    <div class="char-count" id="charCount">0 / 2500</div>
-
-    <!-- Variable insert pills -->
-    <div style="margin-top:10px; font-size:11px; font-weight:600; color:var(--ink3); text-transform:uppercase; letter-spacing:.05em; margin-bottom:6px;">Insert variable</div>
-    <div class="var-pills">
-      <button class="var-pill" onclick="insertVar('{customer_name}')">{customer_name}</button>
-      <button class="var-pill" onclick="insertVar('{store_name}')">{store_name}</button>
-      <button class="var-pill" onclick="insertVar('{pickup_timings}')">{pickup_timings}</button>
+      <div class="act-row">
+        <button class="act-btn" onclick="dlAudio()">↓ Download WAV</button>
+        <button class="act-btn" onclick="generate()">↺ Regenerate</button>
+      </div>
     </div>
 
-    <!-- Template buttons -->
-    <div style="margin-top:14px; font-size:11px; font-weight:600; color:var(--ink3); text-transform:uppercase; letter-spacing:.05em; margin-bottom:6px;">Load template</div>
-    <div class="tpl-row">
-      <button class="tpl-btn" onclick="loadTemplate('en')">English — pickup reminder</button>
-      <button class="tpl-btn" onclick="loadTemplate('hi')">Hindi — pickup reminder</button>
-      <button class="tpl-btn" onclick="loadTemplate('en2')">English — order delayed</button>
-      <button class="tpl-btn" onclick="loadTemplate('hi2')">Hindi — order delayed</button>
+    <!-- Script -->
+    <div class="card">
+      <div class="card-lbl">Script</div>
+
+      <!-- Language selector -->
+      <div style="font-size:11px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;">Language</div>
+      <div class="lang-tabs">
+        <button class="lang-tab active" id="lt-en" onclick="setLang('en',this)">🇬🇧 English</button>
+        <button class="lang-tab" id="lt-hi" onclick="setLang('hi',this)">🇮🇳 Hindi</button>
+        <button class="lang-tab" id="lt-hl" onclick="setLang('hl',this)">🔀 Hinglish</button>
+      </div>
+
+      <!-- Scenario selector -->
+      <div style="font-size:11px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;">Scenario</div>
+      <div class="tpl-row" style="margin-top:0;">
+        <button class="tpl-btn active" id="sc-pickup" onclick="setScenario('pickup',this)">📦 Order arrived</button>
+        <button class="tpl-btn" id="sc-delay" onclick="setScenario('delay',this)">⏰ Order delayed</button>
+        <button class="tpl-btn" id="sc-reminder" onclick="setScenario('reminder',this)">🔔 Pickup reminder</button>
+      </div>
+
+      <!-- Editable script -->
+      <div style="margin-top:16px;font-size:11px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:7px;">Edit script</div>
+      <textarea id="script" placeholder="Select a language and scenario above, or type your own script here…"></textarea>
+      <div class="char-count" id="charCount">0 / 2500</div>
+
+      <!-- Insert variable pills (standard) -->
+      <div style="margin-top:12px;font-size:11px;font-weight:600;color:var(--ink3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">Insert standard variable</div>
+      <div class="var-pills">
+        <button class="var-pill" onclick="insertVar('{customer_name}')">{customer_name}</button>
+        <button class="var-pill" onclick="insertVar('{store_name}')">{store_name}</button>
+        <button class="var-pill" onclick="insertVar('{pickup_timings}')">{pickup_timings}</button>
+      </div>
+
+      <!-- CSV column pills (populated after CSV upload) -->
+      <div id="csvVarSection" style="display:none;">
+        <div style="margin-top:10px;font-size:11px;font-weight:600;color:#0369A1;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">Insert from your CSV</div>
+        <div class="csv-var-pills" id="csvVarPills"></div>
+      </div>
+
+      <!-- Live preview -->
+      <div class="live-preview" id="livePreview">
+        <div class="live-preview-lbl">Live preview (uses first CSV row · or sample values)</div>
+        <div class="live-preview-text placeholder" id="livePreviewText">Select a scenario above to see a preview…</div>
+      </div>
     </div>
-  </div>
 
-  <!-- Voice picker -->
-  <div class="card">
-    <div class="card-label">Voice</div>
-    <div style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap;">
-      <button class="filter-btn active" onclick="filterVoices('all',this)">All (37)</button>
-      <button class="filter-btn" onclick="filterVoices('F',this)">Female (14)</button>
-      <button class="filter-btn" onclick="filterVoices('M',this)">Male (23)</button>
+    <!-- Voice -->
+    <div class="card">
+      <div class="card-lbl">Voice</div>
+      <div class="voice-filter">
+        <button class="flt-btn active" onclick="filterV('all',this)">All (37)</button>
+        <button class="flt-btn" onclick="filterV('F',this)">Female (14)</button>
+        <button class="flt-btn" onclick="filterV('M',this)">Male (23)</button>
+      </div>
+      <div class="voice-grid" id="voiceGrid"></div>
     </div>
-    <div class="voice-grid" id="voiceGrid"></div>
-  </div>
 
-  <!-- Sample rate -->
-  <div class="card">
-    <div class="card-label">Audio quality</div>
-    <div class="sr-grid" id="srGrid"></div>
-    <div style="margin-top:10px;font-size:12px;color:var(--ink3);">Higher sample rates sound richer. Use 8kHz for telephony (Karix calls), 24kHz for playback testing.</div>
-  </div>
+    <!-- Sample rate -->
+    <div class="card">
+      <div class="card-lbl">Audio quality</div>
+      <div class="sr-grid" id="srGrid"></div>
+      <div style="margin-top:10px;font-size:12px;color:var(--ink3);">Use 8kHz for Karix telephony calls. Use 24kHz for listening tests.</div>
+    </div>
 
-  <!-- Generate -->
-  <button class="generate-btn" id="generateBtn" onclick="generate()">
-    <div class="spinner"></div>
-    <svg class="btn-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
-      <polygon points="5 3 19 12 5 21 5 3"/>
-    </svg>
-    Generate &amp; play
-  </button>
+    <!-- Generate -->
+    <button class="gen-btn" id="genBtn" onclick="generate()">
+      <div class="spinner"></div>
+      <svg class="btn-icon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+      Generate &amp; play
+    </button>
 
-  <!-- History -->
-  <div id="historySection" style="display:none; margin-top:28px;">
-    <div class="card-label" style="margin-bottom:10px; padding-left:2px;">Recent generations</div>
-    <div class="history-list" id="historyList"></div>
-  </div>
+    <!-- History -->
+    <div id="histSec" style="display:none;margin-top:24px;">
+      <div class="card-lbl" style="padding-left:2px;margin-bottom:8px;">Recent generations</div>
+      <div id="histList"></div>
+    </div>
 
   </div><!-- /tab-tester -->
 
-  <!-- ══ TAB: BULK CSV ══ -->
+  <!-- ══════════════ TAB 2: BULK ══════════════ -->
   <div class="tab-pane" id="tab-bulk">
 
-    <!-- API key reminder -->
-    <div id="bulkKeyReminder" class="error-box" style="display:none;margin-bottom:14px;">
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-      <span>Set your Sarvam AI API key in the Script Tester tab first.</span>
+    <div class="info-note">
+      💡 The script template, voice, and audio quality you set in the <strong>Script tester</strong> tab are used for all generated recordings here.
+      <span id="bulkVoiceInfo" style="display:block;margin-top:4px;font-weight:600;"></span>
     </div>
 
     <!-- Column spec -->
     <div class="col-spec">
       <div class="col-spec-title">Required CSV columns</div>
       <div class="col-spec-grid">
-        <div><span class="col-tag">phone_number</span> <span class="col-desc">+919876543210 or 919876543210</span></div>
-        <div><span class="col-tag">customer_name</span> <span class="col-desc">Used in {customer_name}</span></div>
-        <div><span class="col-tag">store_name</span> <span class="col-desc">Used in {store_name}</span></div>
-        <div><span class="col-tag">pickup_timings</span> <span class="col-desc">Used in {pickup_timings}</span></div>
+        <div><span class="ctag">phone_number</span> <span class="cdesc">+91… or 91… (auto-fixed)</span></div>
+        <div><span class="ctag">customer_name</span> <span class="cdesc">Used as {customer_name}</span></div>
+        <div><span class="ctag">store_name</span> <span class="cdesc">Used as {store_name}</span></div>
+        <div><span class="ctag">pickup_timings</span> <span class="cdesc">Used as {pickup_timings}</span></div>
       </div>
-      <div style="margin-top:10px;font-size:12px;color:var(--ink2);">
-        Any extra column you add automatically becomes a <span class="col-tag">{variable}</span> you can use in your script template above.
-      </div>
+      <div style="margin-top:9px;font-size:12px;color:var(--ink2);">Any extra column becomes a <span class="ctag">{variable}</span> you can use in your script.</div>
     </div>
 
     <!-- Drop zone -->
-    <div class="drop-zone" id="dropZone" onclick="document.getElementById('csvFileInput').click()"
+    <div class="drop-zone" id="dropZone"
+      onclick="document.getElementById('csvInput').click()"
       ondragover="event.preventDefault();this.classList.add('over')"
       ondragleave="this.classList.remove('over')"
-      ondrop="handleDrop(event)">
+      ondrop="onDrop(event)">
       <div class="dz-icon">📂</div>
-      <div class="dz-title">Drop your CSV file here</div>
-      <div class="dz-sub">or click to browse · .csv only · max 5 MB</div>
+      <div class="dz-title">Drop CSV file here</div>
+      <div class="dz-sub">or click to browse · .csv only</div>
     </div>
-    <input type="file" id="csvFileInput" accept=".csv" style="display:none" onchange="handleFileSelect(this)"/>
+    <input type="file" id="csvInput" accept=".csv" style="display:none" onchange="onFileSelect(this)"/>
 
-    <div class="action-row" style="margin-top:0;margin-bottom:14px;">
-      <button class="btn-secondary" onclick="loadSampleCSV()">Load sample data</button>
-      <a id="templateDownload" href="" download="meesho_template.csv" class="btn-secondary" style="text-decoration:none;display:inline-flex;align-items:center;">↓ Download template</a>
+    <div class="btn-row">
+      <button class="btn-sec" onclick="loadSample()">Load sample data</button>
+      <a id="tplLink" href="#" download="meesho_template.csv" class="btn-sec">↓ Download template</a>
     </div>
 
-    <!-- Validation errors -->
-    <div id="csvErrors" style="display:none;background:var(--red-l);border:1px solid #FECACA;border-radius:var(--radius);padding:12px 14px;margin-bottom:14px;font-size:13px;color:var(--red);"></div>
+    <!-- CSV errors -->
+    <div id="csvErr" style="display:none;background:var(--red-l);border:1px solid #FECACA;border-radius:var(--r);padding:11px 14px;margin-bottom:14px;font-size:13px;color:var(--red);"></div>
 
-    <!-- Preview table -->
-    <div id="csvPreviewWrap" style="display:none;">
+    <!-- Preview + generate -->
+    <div id="csvPreview" style="display:none;">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-        <div style="font-size:14px;font-weight:700;color:var(--ink);" id="csvRowCount"></div>
-        <button class="btn-sm" onclick="clearCSV()">✕ Clear</button>
-      </div>
-      <div class="csv-table-wrap">
-        <table class="csv-table" id="csvTable"></table>
+        <div style="font-size:14px;font-weight:700;" id="rowCount"></div>
+        <button class="btn-sec" style="padding:5px 12px;font-size:12px;" onclick="clearCSV()">✕ Clear</button>
       </div>
 
-      <!-- Bulk progress (shown during generation) -->
-      <div class="bulk-progress-wrap" id="bulkProgressWrap" style="display:none;">
-        <div class="bulk-progress-bar"><div class="bulk-progress-fill" id="bulkProgressFill"></div></div>
+      <div class="tbl-wrap">
+        <table class="csv-tbl" id="csvTbl"></table>
+      </div>
+
+      <div id="bulkProgWrap" style="display:none;" class="bulk-prog-wrap">
+        <div class="bulk-prog-bar"><div class="bulk-prog-fill" id="bulkProgFill"></div></div>
         <div class="bulk-stats">
-          <span>✅ Done: <b id="statDone">0</b></span>
-          <span>⏳ Remaining: <b id="statLeft">0</b></span>
-          <span>❌ Errors: <b id="statErr">0</b></span>
+          <span>✅ Done: <b id="sDone">0</b></span>
+          <span>⏳ Left: <b id="sLeft">0</b></span>
+          <span>❌ Errors: <b id="sErr">0</b></span>
         </div>
       </div>
 
-      <div class="action-row">
-        <button class="btn-primary" id="bulkGenBtn" onclick="startBulkGenerate()">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+      <div class="btn-row" style="margin-top:14px;">
+        <button class="btn-pri" id="bulkBtn" onclick="startBulk()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
           Generate all voice recordings
         </button>
-        <button class="btn-secondary" id="bulkDownloadBtn" style="display:none;" onclick="downloadAllAudio()">
-          ↓ Download all as ZIP
-        </button>
+        <button class="btn-sec" id="dlAllBtn" style="display:none;" onclick="dlAll()">↓ Download all WAV files</button>
       </div>
     </div>
 
@@ -740,605 +425,607 @@
 <audio id="audioEl" preload="auto"></audio>
 
 <script>
+// ══════════════════════════════════════════════
+//  DATA
+// ══════════════════════════════════════════════
 const VOICES = [
-  { id:'shubh',    label:'Shubh',    gender:'M', lang:'Hindi', code:'hi-IN' },
-  { id:'aditya',   label:'Aditya',   gender:'M', lang:'Hindi', code:'hi-IN' },
-  { id:'rahul',    label:'Rahul',    gender:'M', lang:'Hindi', code:'hi-IN' },
-  { id:'rohan',    label:'Rohan',    gender:'M', lang:'Hindi', code:'hi-IN' },
-  { id:'amit',     label:'Amit',     gender:'M', lang:'Hindi', code:'hi-IN' },
-  { id:'dev',      label:'Dev',      gender:'M', lang:'Hindi', code:'hi-IN' },
-  { id:'ratan',    label:'Ratan',    gender:'M', lang:'Hindi', code:'hi-IN' },
-  { id:'varun',    label:'Varun',    gender:'M', lang:'Hindi', code:'hi-IN' },
-  { id:'manan',    label:'Manan',    gender:'M', lang:'Hindi', code:'hi-IN' },
-  { id:'sumit',    label:'Sumit',    gender:'M', lang:'Hindi', code:'hi-IN' },
-  { id:'kabir',    label:'Kabir',    gender:'M', lang:'Hindi', code:'hi-IN' },
-  { id:'aayan',    label:'Aayan',    gender:'M', lang:'Hindi', code:'hi-IN' },
-  { id:'ashutosh', label:'Ashutosh', gender:'M', lang:'Hindi', code:'hi-IN' },
-  { id:'advait',   label:'Advait',   gender:'M', lang:'Hindi', code:'hi-IN' },
-  { id:'anand',    label:'Anand',    gender:'M', lang:'Hindi', code:'hi-IN' },
-  { id:'tarun',    label:'Tarun',    gender:'M', lang:'Hindi', code:'hi-IN' },
-  { id:'sunny',    label:'Sunny',    gender:'M', lang:'Hindi', code:'hi-IN' },
-  { id:'mani',     label:'Mani',     gender:'M', lang:'Hindi', code:'hi-IN' },
-  { id:'gokul',    label:'Gokul',    gender:'M', lang:'Hindi', code:'hi-IN' },
-  { id:'vijay',    label:'Vijay',    gender:'M', lang:'Hindi', code:'hi-IN' },
-  { id:'mohit',    label:'Mohit',    gender:'M', lang:'Hindi', code:'hi-IN' },
-  { id:'rehan',    label:'Rehan',    gender:'M', lang:'Hindi', code:'hi-IN' },
-  { id:'soham',    label:'Soham',    gender:'M', lang:'Hindi', code:'hi-IN' },
-  { id:'ritu',     label:'Ritu',     gender:'F', lang:'Hindi', code:'hi-IN' },
-  { id:'priya',    label:'Priya',    gender:'F', lang:'Hindi', code:'hi-IN' },
-  { id:'neha',     label:'Neha',     gender:'F', lang:'Hindi', code:'hi-IN' },
-  { id:'pooja',    label:'Pooja',    gender:'F', lang:'Hindi', code:'hi-IN' },
-  { id:'simran',   label:'Simran',   gender:'F', lang:'Hindi', code:'hi-IN' },
-  { id:'kavya',    label:'Kavya',    gender:'F', lang:'Hindi', code:'hi-IN' },
-  { id:'ishita',   label:'Ishita',   gender:'F', lang:'Hindi', code:'hi-IN' },
-  { id:'shreya',   label:'Shreya',   gender:'F', lang:'Hindi', code:'hi-IN' },
-  { id:'roopa',    label:'Roopa',    gender:'F', lang:'Hindi', code:'hi-IN' },
-  { id:'tanya',    label:'Tanya',    gender:'F', lang:'Hindi', code:'hi-IN' },
-  { id:'shruti',   label:'Shruti',   gender:'F', lang:'Hindi', code:'hi-IN' },
-  { id:'suhani',   label:'Suhani',   gender:'F', lang:'Hindi', code:'hi-IN' },
-  { id:'kavitha',  label:'Kavitha',  gender:'F', lang:'Hindi', code:'hi-IN' },
-  { id:'rupali',   label:'Rupali',   gender:'F', lang:'Hindi', code:'hi-IN' },
+  {id:'shubh',label:'Shubh',g:'M',lang:'Hindi',code:'hi-IN'},
+  {id:'aditya',label:'Aditya',g:'M',lang:'Hindi',code:'hi-IN'},
+  {id:'rahul',label:'Rahul',g:'M',lang:'Hindi',code:'hi-IN'},
+  {id:'rohan',label:'Rohan',g:'M',lang:'Hindi',code:'hi-IN'},
+  {id:'amit',label:'Amit',g:'M',lang:'Hindi',code:'hi-IN'},
+  {id:'dev',label:'Dev',g:'M',lang:'Hindi',code:'hi-IN'},
+  {id:'ratan',label:'Ratan',g:'M',lang:'Hindi',code:'hi-IN'},
+  {id:'varun',label:'Varun',g:'M',lang:'Hindi',code:'hi-IN'},
+  {id:'manan',label:'Manan',g:'M',lang:'Hindi',code:'hi-IN'},
+  {id:'sumit',label:'Sumit',g:'M',lang:'Hindi',code:'hi-IN'},
+  {id:'kabir',label:'Kabir',g:'M',lang:'Hindi',code:'hi-IN'},
+  {id:'aayan',label:'Aayan',g:'M',lang:'Hindi',code:'hi-IN'},
+  {id:'ashutosh',label:'Ashutosh',g:'M',lang:'Hindi',code:'hi-IN'},
+  {id:'advait',label:'Advait',g:'M',lang:'Hindi',code:'hi-IN'},
+  {id:'anand',label:'Anand',g:'M',lang:'Hindi',code:'hi-IN'},
+  {id:'tarun',label:'Tarun',g:'M',lang:'Hindi',code:'hi-IN'},
+  {id:'sunny',label:'Sunny',g:'M',lang:'Hindi',code:'hi-IN'},
+  {id:'mani',label:'Mani',g:'M',lang:'Hindi',code:'hi-IN'},
+  {id:'gokul',label:'Gokul',g:'M',lang:'Hindi',code:'hi-IN'},
+  {id:'vijay',label:'Vijay',g:'M',lang:'Hindi',code:'hi-IN'},
+  {id:'mohit',label:'Mohit',g:'M',lang:'Hindi',code:'hi-IN'},
+  {id:'rehan',label:'Rehan',g:'M',lang:'Hindi',code:'hi-IN'},
+  {id:'soham',label:'Soham',g:'M',lang:'Hindi',code:'hi-IN'},
+  {id:'ritu',label:'Ritu',g:'F',lang:'Hindi',code:'hi-IN'},
+  {id:'priya',label:'Priya',g:'F',lang:'Hindi',code:'hi-IN'},
+  {id:'neha',label:'Neha',g:'F',lang:'Hindi',code:'hi-IN'},
+  {id:'pooja',label:'Pooja',g:'F',lang:'Hindi',code:'hi-IN'},
+  {id:'simran',label:'Simran',g:'F',lang:'Hindi',code:'hi-IN'},
+  {id:'kavya',label:'Kavya',g:'F',lang:'Hindi',code:'hi-IN'},
+  {id:'ishita',label:'Ishita',g:'F',lang:'Hindi',code:'hi-IN'},
+  {id:'shreya',label:'Shreya',g:'F',lang:'Hindi',code:'hi-IN'},
+  {id:'roopa',label:'Roopa',g:'F',lang:'Hindi',code:'hi-IN'},
+  {id:'tanya',label:'Tanya',g:'F',lang:'Hindi',code:'hi-IN'},
+  {id:'shruti',label:'Shruti',g:'F',lang:'Hindi',code:'hi-IN'},
+  {id:'suhani',label:'Suhani',g:'F',lang:'Hindi',code:'hi-IN'},
+  {id:'kavitha',label:'Kavitha',g:'F',lang:'Hindi',code:'hi-IN'},
+  {id:'rupali',label:'Rupali',g:'F',lang:'Hindi',code:'hi-IN'},
+];
+
+const SAMPLE_RATES = [
+  {hz:8000, label:'8 kHz',  desc:'Telephony / Karix'},
+  {hz:16000,label:'16 kHz', desc:'Good quality'},
+  {hz:22050,label:'22 kHz', desc:'High quality'},
+  {hz:24000,label:'24 kHz', desc:'Premium'},
 ];
 
 const TEMPLATES = {
-  en:  "Hi {customer_name}, your Meesho Store Pickup order has arrived at {store_name}. Please pick it up today between {pickup_timings}.",
-  hi:  "Hi {customer_name}, aapka Meesho Store Pickup order {store_name} par pahunch gaya hai. Aaj hi {pickup_timings} ke beech pickup kar lein.",
-  en2: "Hello {customer_name}, we wanted to let you know that your order at {store_name} is delayed. It will be available for pickup by {pickup_timings}. We apologise for the inconvenience.",
-  hi2: "Namaste {customer_name}, aapke {store_name} ke order mein thodi deri ho gayi hai. Yeh {pickup_timings} tak pickup ke liye available ho jayega. Asuvidhaa ke liye khed hai.",
+  en: {
+    pickup: 'Hi {customer_name}, your Meesho Store Pickup order has arrived at {store_name}. Please pick it up today between {pickup_timings}.',
+    delay:  'Hello {customer_name}, your order at {store_name} is slightly delayed. It will be ready for pickup by {pickup_timings}. We apologise for the inconvenience.',
+    reminder:'Hi {customer_name}, this is a reminder that your Meesho order at {store_name} is waiting for you. Store timings are {pickup_timings}. Please collect it soon.',
+  },
+  hi: {
+    pickup: 'Namaste {customer_name}, aapka Meesho Store Pickup order {store_name} par pahunch gaya hai. Kripya aaj hi {pickup_timings} ke beech pickup kar lein.',
+    delay:  'Namaste {customer_name}, aapke {store_name} ke order mein thodi deri ho gayi hai. Yeh {pickup_timings} tak pickup ke liye available ho jayega. Asuvidhaa ke liye khed hai.',
+    reminder:'Namaste {customer_name}, aapka Meesho order {store_name} mein aapka intezaar kar raha hai. Store {pickup_timings} tak khula hai. Jaldi pickup kar lein.',
+  },
+  hl: {
+    pickup: 'Hi {customer_name}, aapka Meesho order {store_name} pe aa gaya hai. Today hi {pickup_timings} ke beech pick up kar lena.',
+    delay:  'Hello {customer_name}, aapke {store_name} wale order mein thodi delay ho gayi hai. {pickup_timings} tak ready ho jayega. Sorry for the inconvenience.',
+    reminder:'Hi {customer_name}, just a reminder ki aapka Meesho order {store_name} mein waiting hai. Store {pickup_timings} tak open hai. Please pick it up soon.',
+  },
 };
 
-let selectedVoice = 'shubh';
-let selectedSR = 8000;  // 8kHz default — telephony-optimised for Karix
+// Active language and scenario
+let activeLang = 'en';
+let activeScenario = 'pickup';
 
-const SAMPLE_RATES = [
-  { hz: 8000,  label: '8 kHz',  desc: 'Telephony / Karix' },
-  { hz: 16000, label: '16 kHz', desc: 'Good quality' },
-  { hz: 22050, label: '22 kHz', desc: 'High quality' },
-  { hz: 24000, label: '24 kHz', desc: 'Premium (default)' },
-];
-let currentBlobUrl = null;
-let currentFilename = 'audio.wav';
-let history = [];
-const audio = document.getElementById('audioEl');
-
-// ── Render voice grid ──
-function renderVoices() {
-  const grid = document.getElementById('voiceGrid');
-  grid.innerHTML = VOICES.map(v => `
-    <div class="voice-card ${v.id===selectedVoice?'active':''}" onclick="selectVoice('${v.id}')" id="vc-${v.id}">
-      <div class="voice-avatar">${v.gender}</div>
-      <div>
-        <div class="voice-name">${v.label}</div>
-        <div class="voice-lang">${v.lang}</div>
-      </div>
-      <span class="voice-check">✓</span>
-    </div>
-  `).join('');
-}
-renderVoices();
-renderSampleRates();
-
-function renderSampleRates() {
-  const grid = document.getElementById('srGrid');
-  grid.innerHTML = SAMPLE_RATES.map(sr => `
-    <div class="sr-card ${sr.hz===selectedSR?'active':''}" onclick="selectSR(${sr.hz},this)">
-      <div class="sr-rate">${sr.label}</div>
-      <div class="sr-label">${sr.desc}</div>
-    </div>
-  `).join('');
-}
-
-function selectSR(hz, el) {
-  selectedSR = hz;
-  document.querySelectorAll('.sr-card').forEach(c => c.classList.remove('active'));
-  el.classList.add('active');
-}
-
-function filterVoices(gender, btn) {
-  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  document.querySelectorAll('.voice-card').forEach(card => {
-    const v = VOICES.find(v => 'vc-'+v.id === card.id);
-    if (!v) return;
-    card.classList.toggle('hidden', gender !== 'all' && v.gender !== gender);
-  });
-}
-
-function selectVoice(id) {
-  selectedVoice = id;
-  document.querySelectorAll('.voice-card').forEach(c => c.classList.remove('active'));
-  document.getElementById('vc-'+id).classList.add('active');
-}
-
-// ── API key watcher ──
-document.getElementById('apiKey').addEventListener('input', function() {
-  const st = document.getElementById('keyStatus');
-  if (this.value.trim().length > 10) {
-    st.textContent = 'Key set'; st.className = 'key-status set';
-  } else {
-    st.textContent = 'No key'; st.className = 'key-status unset';
-  }
-});
-
-// ── Char counter ──
-document.getElementById('script').addEventListener('input', function() {
-  const el = document.getElementById('charCount');
-  el.textContent = this.value.length + ' / 2500';
-  el.className = 'char-count' + (this.value.length > 2200 ? ' warn' : '');
-});
-
-// ── Variable insert ──
-function insertVar(v) {
-  const ta = document.getElementById('script');
-  const s = ta.selectionStart, e = ta.selectionEnd;
-  ta.value = ta.value.slice(0,s) + v + ta.value.slice(e);
-  ta.selectionStart = ta.selectionEnd = s + v.length;
-  ta.focus();
-  ta.dispatchEvent(new Event('input'));
-}
-
-// ── Template load ──
-function loadTemplate(key) {
-  document.getElementById('script').value = TEMPLATES[key];
-  document.getElementById('script').dispatchEvent(new Event('input'));
-}
-
-// ── Helpers ──
-function showError(msg) {
-  const b = document.getElementById('errorBox');
-  document.getElementById('errorMsg').textContent = msg;
-  b.classList.add('visible');
-  setTimeout(() => b.classList.remove('visible'), 6000);
-}
-function hideError() { document.getElementById('errorBox').classList.remove('visible'); }
-
-function b64ToBlob(b64) {
-  const bin = atob(b64);
-  const buf = new Uint8Array(bin.length);
-  for (let i = 0; i < bin.length; i++) buf[i] = bin.charCodeAt(i);
-  return new Blob([buf], { type: 'audio/wav' });
-}
-
-function fmtTime(s) {
-  const m = Math.floor(s/60);
-  return m+':'+(Math.floor(s%60)+'').padStart(2,'0');
-}
-
-// ── Audio player ──
-audio.addEventListener('timeupdate', () => {
-  const pct = audio.duration ? (audio.currentTime/audio.duration)*100 : 0;
-  document.getElementById('progressFill').style.width = pct+'%';
-  document.getElementById('timeLabel').textContent =
-    fmtTime(audio.currentTime) + (audio.duration ? ' / '+fmtTime(audio.duration) : '');
-});
-audio.addEventListener('ended', () => {
-  document.getElementById('playBtn').classList.remove('playing');
-  document.getElementById('progressFill').style.width = '0%';
-});
-
-function togglePlay() {
-  if (audio.paused) { audio.play(); document.getElementById('playBtn').classList.add('playing'); }
-  else              { audio.pause(); document.getElementById('playBtn').classList.remove('playing'); }
-}
-
-function seekAudio(e) {
-  if (!audio.duration) return;
-  const rect = e.currentTarget.getBoundingClientRect();
-  audio.currentTime = ((e.clientX - rect.left) / rect.width) * audio.duration;
-}
-
-function downloadAudio() {
-  if (!currentBlobUrl) return;
-  const a = document.createElement('a');
-  a.href = currentBlobUrl;
-  a.download = currentFilename;
-  a.click();
-}
-
-function regenerate() { generate(); }
-
-// ── Main generate ──
-async function generate() {
-  hideError();
-  const apiKey = document.getElementById('apiKey').value.trim();
-  const text   = document.getElementById('script').value.trim();
-
-  if (!apiKey) { showError('Paste your Sarvam AI API key at the top first.'); return; }
-  if (!text)   { showError('Write a script before generating.'); return; }
-  if (text.length > 2500) { showError('Script is too long — max 2500 characters.'); return; }
-
-  const btn = document.getElementById('generateBtn');
-  btn.disabled = true;
-  btn.classList.add('loading');
-  btn.querySelector('.btn-icon') && (btn.querySelector('.btn-icon').style.display = 'none');
-
-  const voice = VOICES.find(v => v.id === selectedVoice);
-  try {
-    const res = await fetch('https://api.sarvam.ai/text-to-speech', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'api-subscription-key': apiKey,
-      },
-      body: JSON.stringify({
-        inputs: [text],
-        target_language_code: voice.code,
-        speaker: voice.id,
-        speech_sample_rate: selectedSR,
-        model: 'bulbul:v3',
-      }),
-    });
-
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.message || err.detail || `API error ${res.status}`);
-    }
-
-    const data = await res.json();
-    const b64  = data.audios?.[0];
-    if (!b64) throw new Error('No audio returned from Sarvam AI.');
-
-    const blob = b64ToBlob(b64);
-    if (currentBlobUrl) URL.revokeObjectURL(currentBlobUrl);
-    currentBlobUrl = URL.createObjectURL(blob);
-    currentFilename = `${voice.id}_${Date.now()}.wav`;
-
-    // Wire up player
-    audio.src = currentBlobUrl;
-    audio.load();
-    audio.play();
-    document.getElementById('playBtn').classList.add('playing');
-    document.getElementById('progressFill').style.width = '0%';
-
-    // Show player card
-    const card = document.getElementById('playerCard');
-    card.classList.add('visible');
-    document.getElementById('playerMeta').textContent =
-      `${voice.label} · ${voice.lang} · ${selectedSR/1000}kHz`;
-
-    // Add to history
-    addHistory({ text, voice, sr: selectedSR, blobUrl: currentBlobUrl, filename: currentFilename });
-
-  } catch(e) {
-    showError(e.message);
-  } finally {
-    btn.disabled = false;
-    btn.classList.remove('loading');
-  }
-}
-
-// ── History ──
-function addHistory(item) {
-  history.unshift(item);
-  if (history.length > 8) history.pop();
-  renderHistory();
-}
-
-function renderHistory() {
-  const sec  = document.getElementById('historySection');
-  const list = document.getElementById('historyList');
-  if (!history.length) { sec.style.display = 'none'; return; }
-  sec.style.display = 'block';
-  list.innerHTML = history.map((h, i) => `
-    <div class="history-item">
-      <div class="h-voice-dot"></div>
-      <div class="h-text">${h.text.replace(/</g,'&lt;').slice(0, 80)}${h.text.length>80?'…':''}</div>
-      <span class="h-meta">${h.voice.label} · ${h.sr/1000}kHz</span>
-      <button class="h-play" onclick="playHistoryItem(${i})">▶ Play</button>
-    </div>
-  `).join('');
-}
-
-function playHistoryItem(i) {
-  const h = history[i];
-  if (!h) return;
-  audio.src = h.blobUrl;
-  audio.load();
-  audio.play();
-  document.getElementById('playBtn').classList.add('playing');
-  document.getElementById('playerCard').classList.add('visible');
-  document.getElementById('playerMeta').textContent =
-    `${h.voice.label} · ${h.voice.lang} · ${h.sr/1000}kHz`;
-  currentBlobUrl  = h.blobUrl;
-  currentFilename = h.filename;
-}
-
-
-// ══════════════════════════════════════════════
-//  TAB SWITCHING
-// ══════════════════════════════════════════════
-function switchTab(id, btn) {
-  document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-  document.getElementById('tab-'+id).classList.add('active');
-  btn.classList.add('active');
-}
-
-// ══════════════════════════════════════════════
-//  CSV STATE
-// ══════════════════════════════════════════════
-let csvRows    = [];   // parsed rows [{phone_number, customer_name, ...}]
-let csvHeaders = [];
-let audioBlobs = {};   // { rowIndex: Blob }
-
-const SAMPLE_CSV_DATA =
-`phone_number,customer_name,store_name,pickup_timings
+const SAMPLE_CSV = `phone_number,customer_name,store_name,pickup_timings
 +919876543210,Riya Sharma,Lajpat Nagar Store,10am to 6pm
 +919812345678,Amit Verma,Saket Store,9am to 5pm
 +919900112233,Priya Patel,Connaught Place Store,11am to 7pm
 +919988776655,Rahul Singh,Nehru Place Store,10am to 4pm`;
 
-// Set template download href on load
-(function() {
-  const blob = new Blob([SAMPLE_CSV_DATA], {type:'text/csv'});
-  document.getElementById('templateDownload').href = URL.createObjectURL(blob);
+// ══════════════════════════════════════════════
+//  STATE
+// ══════════════════════════════════════════════
+let selVoice = 'shubh';
+let selSR    = 8000;
+let curBlob  = null;
+let curFile  = 'audio.wav';
+let testerHistory = [];
+
+// CSV state
+let csvRows    = [];
+let csvHeaders = [];
+let audioBlobs = {};
+let bulkRunning = false;
+
+// ══════════════════════════════════════════════
+//  INIT
+// ══════════════════════════════════════════════
+const audioEl = document.getElementById('audioEl');
+
+renderVoices();
+renderSR();
+loadActiveTemplate(); // load EN pickup as default
+
+// Set template download link
+(function(){
+  const b = new Blob([SAMPLE_CSV],{type:'text/csv'});
+  document.getElementById('tplLink').href = URL.createObjectURL(b);
 })();
 
-// ── File handling ─────────────────────────────
-function handleDrop(e) {
+// ══════════════════════════════════════════════
+//  TABS
+// ══════════════════════════════════════════════
+function switchTab(id, btn){
+  document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tab-'+id).classList.add('active');
+  btn.classList.add('active');
+  if(id==='bulk') updateBulkInfo();
+}
+
+function updateBulkInfo(){
+  const v = VOICES.find(v=>v.id===selVoice);
+  const script = document.getElementById('script').value.trim();
+  document.getElementById('bulkVoiceInfo').textContent =
+    `Voice: ${v?v.label:'—'} · Sample rate: ${selSR/1000}kHz · Script: "${script.slice(0,60)}${script.length>60?'…':''}"`;
+}
+
+// ══════════════════════════════════════════════
+//  API KEY
+// ══════════════════════════════════════════════
+function onKeyInput(){
+  const has = document.getElementById('apiKey').value.trim().length > 10;
+  document.getElementById('keyDot').className = 'key-dot '+(has?'set':'unset');
+  document.getElementById('keyLbl').textContent = has ? 'Key set ✓' : 'No key set';
+  document.getElementById('keyLbl').style.color = has ? 'var(--green)' : 'var(--amber)';
+}
+
+function getApiKey(){ return document.getElementById('apiKey').value.trim(); }
+
+// ══════════════════════════════════════════════
+//  VOICES
+// ══════════════════════════════════════════════
+function renderVoices(){
+  document.getElementById('voiceGrid').innerHTML = VOICES.map(v=>`
+    <div class="vc ${v.id===selVoice?'active':''}" id="vc-${v.id}" onclick="pickVoice('${v.id}')">
+      <div class="vc-av">${v.g}</div>
+      <div><div class="vc-name">${v.label}</div><div class="vc-lang">${v.lang}</div></div>
+    </div>`).join('');
+}
+
+function pickVoice(id){
+  selVoice = id;
+  document.querySelectorAll('.vc').forEach(c=>c.classList.remove('active'));
+  const el = document.getElementById('vc-'+id);
+  if(el) el.classList.add('active');
+}
+
+function filterV(g, btn){
+  document.querySelectorAll('.flt-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.vc').forEach(c=>{
+    const v = VOICES.find(v=>'vc-'+v.id===c.id);
+    c.classList.toggle('hidden', g!=='all' && v && v.g!==g);
+  });
+}
+
+// ══════════════════════════════════════════════
+//  SAMPLE RATE
+// ══════════════════════════════════════════════
+function renderSR(){
+  document.getElementById('srGrid').innerHTML = SAMPLE_RATES.map(sr=>`
+    <div class="src ${sr.hz===selSR?'active':''}" onclick="pickSR(${sr.hz},this)">
+      <div class="src-hz">${sr.label}</div>
+      <div class="src-lbl">${sr.desc}</div>
+    </div>`).join('');
+}
+
+function pickSR(hz, el){
+  selSR = hz;
+  document.querySelectorAll('.src').forEach(c=>c.classList.remove('active'));
+  el.classList.add('active');
+}
+
+// ══════════════════════════════════════════════
+//  SCRIPT HELPERS
+// ══════════════════════════════════════════════
+document.getElementById('script').addEventListener('input',function(){
+  const el = document.getElementById('charCount');
+  el.textContent = this.value.length+' / 2500';
+  el.style.color = this.value.length>2200 ? 'var(--amber)' : 'var(--ink3)';
+  updateLivePreview();
+});
+
+function insertVar(v){
+  const ta = document.getElementById('script');
+  const s=ta.selectionStart, e=ta.selectionEnd;
+  ta.value = ta.value.slice(0,s)+v+ta.value.slice(e);
+  ta.selectionStart = ta.selectionEnd = s+v.length;
+  ta.focus(); ta.dispatchEvent(new Event('input'));
+}
+
+// ── Language + Scenario ──────────────────────────────────────────────────────
+function setLang(lang, btn){
+  activeLang = lang;
+  document.querySelectorAll('.lang-tab').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  loadActiveTemplate();
+  // Update voice suggestion
+  const voiceHints = {en:'maitreyi or yuval',hi:'priya, neha or rahul',hl:'simran, kavya or aditya'};
+}
+
+function setScenario(scenario, btn){
+  activeScenario = scenario;
+  document.querySelectorAll('#sc-pickup,#sc-delay,#sc-reminder').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  loadActiveTemplate();
+}
+
+function loadActiveTemplate(){
+  const tpl = TEMPLATES[activeLang]?.[activeScenario];
+  if(tpl){
+    document.getElementById('script').value = tpl;
+    document.getElementById('script').dispatchEvent(new Event('input'));
+  }
+}
+
+// ── Sample values for preview (used when no CSV loaded) ──────────────────────
+const SAMPLE_ROW = {
+  customer_name:'Riya Sharma',
+  store_name:'Lajpat Nagar Store',
+  pickup_timings:'10am to 6pm',
+};
+
+function interp(tpl, row){
+  return tpl.replace(/\{(\w+)\}/g, (_,k)=>row[k]||'{'+k+'}');
+}
+
+function updateLivePreview(){
+  const tpl = document.getElementById('script').value;
+  if(!tpl.trim()){
+    document.getElementById('livePreviewText').textContent='Select a scenario or type a script to see a preview…';
+    document.getElementById('livePreviewText').className='live-preview-text placeholder';
+    return;
+  }
+  // Use first CSV row if available, else sample
+  const row = csvRows.length ? csvRows[0] : SAMPLE_ROW;
+  const rendered = interp(tpl, row);
+  document.getElementById('livePreviewText').textContent = '"'+rendered+'"';
+  document.getElementById('livePreviewText').className = 'live-preview-text';
+}
+
+// ══════════════════════════════════════════════
+//  ERROR
+// ══════════════════════════════════════════════
+function showErr(msg){
+  const b=document.getElementById('errBox');
+  document.getElementById('errMsg').textContent=msg;
+  b.classList.add('show');
+  setTimeout(()=>b.classList.remove('show'),6000);
+}
+
+// ══════════════════════════════════════════════
+//  SARVAM TTS CALL
+// ══════════════════════════════════════════════
+async function callSarvam(text){
+  const apiKey = getApiKey();
+  if(!apiKey) throw new Error('Paste your Sarvam AI API key at the top first.');
+  const voice = VOICES.find(v=>v.id===selVoice);
+  const res = await fetch('https://api.sarvam.ai/text-to-speech',{
+    method:'POST',
+    headers:{'Content-Type':'application/json','api-subscription-key':apiKey},
+    body:JSON.stringify({
+      inputs:[text],
+      target_language_code: voice.code,
+      speaker: voice.id,
+      speech_sample_rate: selSR,
+      model:'bulbul:v3',
+    }),
+  });
+  if(!res.ok){
+    const err=await res.json().catch(()=>({}));
+    throw new Error(err.message||err.detail||'Sarvam API error '+res.status);
+  }
+  const data=await res.json();
+  const b64=data.audios?.[0];
+  if(!b64) throw new Error('No audio returned from Sarvam AI.');
+  return b64;
+}
+
+function b64ToBlob(b64){
+  const bin=atob(b64);
+  const buf=new Uint8Array(bin.length);
+  for(let i=0;i<bin.length;i++) buf[i]=bin.charCodeAt(i);
+  return new Blob([buf],{type:'audio/wav'});
+}
+
+// ══════════════════════════════════════════════
+//  TESTER — GENERATE
+// ══════════════════════════════════════════════
+async function generate(){
+  const text=document.getElementById('script').value.trim();
+  if(!text){showErr('Write a script before generating.');return;}
+  if(text.length>2500){showErr('Script is too long — max 2500 chars.');return;}
+
+  const btn=document.getElementById('genBtn');
+  btn.disabled=true; btn.classList.add('loading');
+
+  try{
+    const b64=await callSarvam(text);
+    const blob=b64ToBlob(b64);
+    if(curBlob) URL.revokeObjectURL(curBlob);
+    const voice=VOICES.find(v=>v.id===selVoice);
+    curBlob=URL.createObjectURL(blob);
+    curFile=`${voice.id}_${Date.now()}.wav`;
+
+    audioEl.src=curBlob; audioEl.load(); audioEl.play();
+    document.getElementById('playBtn').classList.add('playing');
+    document.getElementById('progFill').style.width='0%';
+    document.getElementById('playerCard').classList.add('visible');
+    document.getElementById('playerMeta').textContent=
+      `${voice.label} · ${voice.lang} · ${selSR/1000}kHz`;
+
+    addHist({text,voice,sr:selSR,blobUrl:curBlob,file:curFile});
+  }catch(e){showErr(e.message);}
+  finally{btn.disabled=false;btn.classList.remove('loading');}
+}
+
+// ══════════════════════════════════════════════
+//  AUDIO PLAYER
+// ══════════════════════════════════════════════
+audioEl.addEventListener('timeupdate',()=>{
+  const pct=audioEl.duration?(audioEl.currentTime/audioEl.duration)*100:0;
+  document.getElementById('progFill').style.width=pct+'%';
+  const fmt=s=>Math.floor(s/60)+':'+(Math.floor(s%60)+'').padStart(2,'0');
+  document.getElementById('timeLbl').textContent=
+    fmt(audioEl.currentTime)+(audioEl.duration?' / '+fmt(audioEl.duration):'');
+});
+audioEl.addEventListener('ended',()=>{
+  document.getElementById('playBtn').classList.remove('playing');
+  document.getElementById('progFill').style.width='0%';
+});
+
+function togglePlay(){
+  if(audioEl.paused){audioEl.play();document.getElementById('playBtn').classList.add('playing');}
+  else{audioEl.pause();document.getElementById('playBtn').classList.remove('playing');}
+}
+function seekAudio(e){
+  if(!audioEl.duration)return;
+  const r=e.currentTarget.getBoundingClientRect();
+  audioEl.currentTime=((e.clientX-r.left)/r.width)*audioEl.duration;
+}
+function dlAudio(){
+  if(!curBlob)return;
+  const a=document.createElement('a');a.href=curBlob;a.download=curFile;a.click();
+}
+
+// ══════════════════════════════════════════════
+//  HISTORY
+// ══════════════════════════════════════════════
+function addHist(item){
+  testerHistory.unshift(item);
+  if(testerHistory.length>8)testerHistory.pop();
+  renderHist();
+}
+function renderHist(){
+  const sec=document.getElementById('histSec');
+  const list=document.getElementById('histList');
+  if(!testerHistory.length){sec.style.display='none';return;}
+  sec.style.display='block';
+  list.innerHTML=testerHistory.map((h,i)=>`
+    <div class="hist-item">
+      <div class="h-dot"></div>
+      <div class="h-txt">${h.text.replace(/</g,'&lt;').slice(0,80)}${h.text.length>80?'…':''}</div>
+      <span class="h-meta">${h.voice.label} · ${h.sr/1000}kHz</span>
+      <button class="h-play" onclick="playHist(${i})">▶ Play</button>
+    </div>`).join('');
+}
+function playHist(i){
+  const h=testerHistory[i]; if(!h)return;
+  audioEl.src=h.blobUrl; audioEl.load(); audioEl.play();
+  document.getElementById('playBtn').classList.add('playing');
+  document.getElementById('playerCard').classList.add('visible');
+  document.getElementById('playerMeta').textContent=`${h.voice.label} · ${h.voice.lang} · ${h.sr/1000}kHz`;
+  curBlob=h.blobUrl; curFile=h.file;
+}
+
+document.getElementById('script').addEventListener('keydown',e=>{
+  if(e.key==='Enter'&&(e.metaKey||e.ctrlKey))generate();
+});
+
+// ══════════════════════════════════════════════
+//  BULK — CSV HANDLING
+// ══════════════════════════════════════════════
+function onDrop(e){
   e.preventDefault();
   document.getElementById('dropZone').classList.remove('over');
-  const file = e.dataTransfer.files[0];
-  if (file) readCSVFile(file);
+  const f=e.dataTransfer.files[0]; if(f)readFile(f);
 }
-function handleFileSelect(input) {
-  if (input.files[0]) readCSVFile(input.files[0]);
-}
-function loadSampleCSV() { parseCSVText(SAMPLE_CSV_DATA); }
-function clearCSV() {
-  csvRows = []; csvHeaders = []; audioBlobs = {};
-  document.getElementById('csvPreviewWrap').style.display = 'none';
-  document.getElementById('csvErrors').style.display = 'none';
-  document.getElementById('bulkDownloadBtn').style.display = 'none';
-  document.getElementById('csvFileInput').value = '';
+function onFileSelect(inp){ if(inp.files[0])readFile(inp.files[0]); }
+function loadSample(){ parseCSV(SAMPLE_CSV); }
+function clearCSV(){
+  csvRows=[];csvHeaders=[];audioBlobs={};
+  document.getElementById('csvPreview').style.display='none';
+  document.getElementById('csvErr').style.display='none';
+  document.getElementById('dlAllBtn').style.display='none';
+  document.getElementById('csvInput').value='';
 }
 
-function readCSVFile(file) {
-  if (!file.name.endsWith('.csv')) { showCSVError('Only .csv files are supported.'); return; }
-  if (file.size > 5*1024*1024)    { showCSVError('File too large — max 5 MB.'); return; }
-  const reader = new FileReader();
-  reader.onload = e => parseCSVText(e.target.result);
-  reader.readAsText(file);
+function readFile(f){
+  if(!f.name.toLowerCase().endsWith('.csv')){showCSVErr('Only .csv files supported.');return;}
+  if(f.size>5*1024*1024){showCSVErr('File too large — max 5 MB.');return;}
+  const r=new FileReader();
+  r.onload=e=>parseCSV(e.target.result);
+  r.readAsText(f);
 }
 
-// ── CSV parser (no library needed) ───────────────────────────────────────────
-function parseCSVText(text) {
-  document.getElementById('csvErrors').style.display = 'none';
-  audioBlobs = {};
-  const lines = text.trim().split(/\r?\n/).filter(Boolean);
-  if (lines.length < 2) { showCSVError('File must have a header row and at least one data row.'); return; }
+function showCSVErr(msg){
+  const el=document.getElementById('csvErr');
+  el.innerHTML='⚠ '+msg; el.style.display='block';
+}
 
-  csvHeaders = lines[0].split(',').map(h => h.trim().replace(/^"+|"+$/g,''));
-  const required = ['phone_number','customer_name','store_name','pickup_timings'];
-  const missing  = required.filter(r => !csvHeaders.includes(r));
-  if (missing.length) { showCSVError('Missing required columns: ' + missing.join(', ')); return; }
+function parseCSV(text){
+  document.getElementById('csvErr').style.display='none';
+  audioBlobs={};
 
-  const errors = [];
-  csvRows = lines.slice(1).map((line, i) => {
-    // Handle quoted commas
-    const vals = line.match(/(".*?"|[^,]+|(?<=,)(?=,)|^(?=,)|(?<=,)$)/g) || [];
-    const row = {};
-    csvHeaders.forEach((h, idx) => {
-      row[h] = (vals[idx] || '').trim().replace(/^"+|"+$/g,'');
-    });
-    row._idx = i;
-    row._status = 'pending';
-    // Normalise phone: strip spaces/dashes/dots, auto-add + prefix
-    let ph = (row.phone_number || '').replace(/[\s\-\.]/g, '');
-    if (ph && !ph.startsWith('+')) ph = '+' + ph;
-    row.phone_number = ph;
-    if (!ph || !/^\+\d{10,15}$/.test(ph)) {
-      errors.push(`Row ${i+2}: invalid phone "${row.phone_number}" — expected 10–15 digits`);
-    }
+  const lines=text.trim().split(/\r?\n/).filter(Boolean);
+  if(lines.length<2){showCSVErr('File needs a header row and at least one data row.');return;}
+
+  // Parse header
+  csvHeaders = lines[0].split(',').map(h=>h.trim().replace(/^"|"$/g,''));
+
+  const required=['phone_number','customer_name','store_name','pickup_timings'];
+  const missing=required.filter(r=>!csvHeaders.includes(r));
+  if(missing.length){showCSVErr('Missing required columns: '+missing.join(', '));return;}
+
+  const errs=[];
+  csvRows = lines.slice(1).map((line,i)=>{
+    // Simple split (handles most CSV cases)
+    const vals = line.split(',').map(v=>v.trim().replace(/^"|"$/g,''));
+    const row={};
+    csvHeaders.forEach((h,idx)=>{ row[h]=vals[idx]||''; });
+    row._i=i; row._st='pending';
+
+    // Normalise phone: strip spaces/dashes, add + if missing
+    let ph=(row.phone_number||'').replace(/[\s\-\.]/g,'');
+    if(ph && !ph.startsWith('+')) ph='+'+ph;
+    row.phone_number=ph;
+
+    if(!ph||!/^\+\d{10,15}$/.test(ph))
+      errs.push(`Row ${i+2}: invalid phone "${row.phone_number}"`);
+
     return row;
   });
 
-  if (errors.length) showCSVError(errors.join('<br>'));
+  if(errs.length) showCSVErr(errs.join('<br>'));
   renderCSVPreview();
+  updateLivePreview();
 }
 
-function showCSVError(msg) {
-  const el = document.getElementById('csvErrors');
-  el.innerHTML = '⚠ ' + msg;
-  el.style.display = 'block';
-}
-
-// ── Preview table ─────────────────────────────────────────────────────────────
-function renderCSVPreview() {
-  if (!csvRows.length) return;
-  document.getElementById('csvPreviewWrap').style.display = 'block';
-  document.getElementById('csvRowCount').textContent = csvRows.length + ' contacts loaded';
-  document.getElementById('bulkProgressWrap').style.display = 'none';
-  document.getElementById('bulkDownloadBtn').style.display = 'none';
-  renderCSVTable();
-}
-
-function getScript() {
+function getScript(){
   return document.getElementById('script').value.trim() ||
-    'Hi {customer_name}, your Meesho Store Pickup order has arrived at {store_name}. Please pick it up today between {pickup_timings}.';
+    TEMPLATES.en;
 }
 
-function interpRow(row) {
-  return getScript().replace(/\{(\w+)\}/g, (_, k) => row[k] || '{'+k+'}');
+function updateCsvVarPills(){
+  // Show CSV column variables in the script editor
+  const allCols = csvHeaders;
+  const sec = document.getElementById('csvVarSection');
+  const pills = document.getElementById('csvVarPills');
+  if(!allCols.length){sec.style.display='none';return;}
+  sec.style.display='block';
+  pills.innerHTML = allCols.map(h=>
+    `<button class="csv-var-pill" onclick="insertVar('{${h}}')">{${h}}</button>`
+  ).join('');
+  updateLivePreview(); // refresh preview with real CSV data
 }
 
-function renderCSVTable() {
-  const tbl = document.getElementById('csvTable');
-  const voiceName = VOICES.find(v=>v.id===selectedVoice)?.label || selectedVoice;
+function renderCSVPreview(){
+  if(!csvRows.length)return;
+  updateCsvVarPills();
+  document.getElementById('csvPreview').style.display='block';
+  document.getElementById('rowCount').textContent=csvRows.length+' contacts loaded';
+  document.getElementById('bulkProgWrap').style.display='none';
+  document.getElementById('dlAllBtn').style.display='none';
+  document.getElementById('bulkBtn').disabled=false;
+  document.getElementById('bulkBtn').innerHTML=
+    '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polygon points="5 3 19 12 5 21 5 3"/></svg> Generate all voice recordings';
+  renderTable();
+}
 
-  // Extra cols beyond required 4
-  const extraCols = csvHeaders.filter(h => !['phone_number','customer_name','store_name','pickup_timings'].includes(h));
-
-  tbl.innerHTML = `
+function renderTable(){
+  const extra=csvHeaders.filter(h=>!['phone_number','customer_name','store_name','pickup_timings'].includes(h));
+  const tbl=document.getElementById('csvTbl');
+  tbl.innerHTML=`
     <thead><tr>
-      <th>#</th>
-      <th>Phone</th>
-      <th>Customer</th>
-      <th>Store</th>
-      <th>Timings</th>
-      ${extraCols.map(h=>`<th>${h}</th>`).join('')}
-      <th>Generated script preview</th>
-      <th>Status</th>
-      <th>Audio</th>
+      <th>#</th><th>Phone</th><th>Name</th><th>Store</th><th>Timings</th>
+      ${extra.map(h=>`<th>${h}</th>`).join('')}
+      <th>Script preview</th><th>Status</th><th>Audio</th>
     </tr></thead>
-    <tbody id="csvTbody"></tbody>`;
-
-  const tbody = document.getElementById('csvTbody');
-  tbody.innerHTML = csvRows.map((row, i) => `
-    <tr id="csv-row-${i}">
-      <td style="color:var(--ink3);font-size:11px;">${i+1}</td>
-      <td style="font-family:monospace;font-size:11px;">${row.phone_number}</td>
-      <td style="font-weight:600;">${row.customer_name}</td>
-      <td>${row.store_name}</td>
-      <td>${row.pickup_timings}</td>
-      ${extraCols.map(h=>`<td>${row[h]||''}</td>`).join('')}
-      <td class="preview-col">"${interpRow(row).replace(/</g,'&lt;').slice(0,100)}${interpRow(row).length>100?'…':''}"</td>
-      <td id="status-${i}">${statusBadge('pending')}</td>
-      <td id="audio-${i}"><span style="color:var(--ink3);font-size:11px;">—</span></td>
-    </tr>`).join('');
+    <tbody>${csvRows.map((r,i)=>`
+      <tr id="tr-${i}">
+        <td style="color:var(--ink3);font-size:11px;">${i+1}</td>
+        <td style="font-family:monospace;font-size:11px;">${r.phone_number}</td>
+        <td style="font-weight:600;">${r.customer_name}</td>
+        <td>${r.store_name}</td>
+        <td>${r.pickup_timings}</td>
+        ${extra.map(h=>`<td>${r[h]||''}</td>`).join('')}
+        <td class="preview-cell">"${interp(getScript(),r).slice(0,90)}…"</td>
+        <td id="st-${i}"><span class="sbadge sb-pending">○ Pending</span></td>
+        <td id="au-${i}"><span style="color:var(--ink3);font-size:11px;">—</span></td>
+      </tr>`).join('')}
+    </tbody>`;
 }
 
-function statusBadge(s) {
-  const map = {
-    pending:    ['status-pending',    '○ Pending'],
-    generating: ['status-generating', '⏳ Generating…'],
-    done:       ['status-done',       '✓ Done'],
-    error:      ['status-error',      '✕ Error'],
+// ══════════════════════════════════════════════
+//  BULK GENERATE
+// ══════════════════════════════════════════════
+async function startBulk(){
+  const apiKey=getApiKey();
+  if(!apiKey){showCSVErr('Set your Sarvam AI API key at the top of the page first.');return;}
+  if(!csvRows.length)return;
+  if(bulkRunning)return;
+
+  bulkRunning=true; audioBlobs={};
+  const btn=document.getElementById('bulkBtn');
+  btn.disabled=true;
+  btn.innerHTML='<div style="width:14px;height:14px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;"></div> Generating…';
+
+  document.getElementById('bulkProgWrap').style.display='block';
+  document.getElementById('dlAllBtn').style.display='none';
+
+  // Re-render table so script previews are up to date
+  renderTable();
+
+  let done=0,errs=0;
+  const total=csvRows.length;
+  const upd=()=>{
+    document.getElementById('sDone').textContent=done;
+    document.getElementById('sLeft').textContent=Math.max(0,total-done-errs);
+    document.getElementById('sErr').textContent=errs;
+    document.getElementById('bulkProgFill').style.width=Math.round(((done+errs)/total)*100)+'%';
   };
-  const [cls, label] = map[s] || map.pending;
-  return `<span class="status-badge ${cls}">${label}</span>`;
-}
+  upd();
 
-// ── Bulk generation ───────────────────────────────────────────────────────────
-let bulkRunning = false;
+  for(let i=0;i<csvRows.length;i++){
+    const row=csvRows[i];
+    const text=interp(getScript(),row);
 
-async function startBulkGenerate() {
-  const apiKey = document.getElementById('apiKey').value.trim();
-  if (!apiKey) {
-    const rem = document.getElementById('bulkKeyReminder');
-    rem.style.display = 'flex'; setTimeout(()=>rem.style.display='none', 5000);
-    return;
-  }
-  if (!csvRows.length) return;
-  if (bulkRunning) return;
+    // Mark generating
+    document.getElementById('st-'+i).innerHTML='<span class="sbadge sb-gen">⏳ Generating…</span>';
+    document.getElementById('tr-'+i).style.background='#FFFDF0';
 
-  bulkRunning = true;
-  audioBlobs = {};
-  const btn = document.getElementById('bulkGenBtn');
-  btn.disabled = true;
-  btn.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> Generating…';
+    try{
+      const b64=await callSarvam(text);
+      const blob=b64ToBlob(b64);
+      const fname=`${row.phone_number}_${row.customer_name.replace(/\s+/g,'_')}.wav`;
+      audioBlobs[i]={blob,fname};
+      const url=URL.createObjectURL(blob);
 
-  document.getElementById('bulkProgressWrap').style.display = 'block';
-  document.getElementById('bulkDownloadBtn').style.display = 'none';
-
-  const voice = VOICES.find(v => v.id === selectedVoice);
-  let done = 0, errs = 0;
-
-  const updateStats = () => {
-    const left = csvRows.length - done - errs;
-    document.getElementById('statDone').textContent = done;
-    document.getElementById('statLeft').textContent = Math.max(0,left);
-    document.getElementById('statErr').textContent  = errs;
-    document.getElementById('bulkProgressFill').style.width =
-      Math.round(((done+errs)/csvRows.length)*100)+'%';
-  };
-  updateStats();
-
-  for (let i = 0; i < csvRows.length; i++) {
-    const row = csvRows[i];
-    const text = interpRow(row);
-
-    // Update row status
-    document.getElementById('status-'+i).innerHTML = statusBadge('generating');
-    document.getElementById('csv-row-'+i).style.background = '#FFFDF0';
-
-    try {
-      const res = await fetch('https://api.sarvam.ai/text-to-speech', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'api-subscription-key': apiKey,
-        },
-        body: JSON.stringify({
-          inputs: [text],
-          target_language_code: voice.code,
-          speaker: voice.id,
-          speech_sample_rate: selectedSR,
-          model: 'bulbul:v3',
-        }),
-      });
-
-      if (!res.ok) {
-        const err = await res.json().catch(()=>({}));
-        throw new Error(err.message || err.detail || 'API error ' + res.status);
-      }
-
-      const data = await res.json();
-      const b64 = data.audios?.[0];
-      if (!b64) throw new Error('No audio returned');
-
-      // Store blob
-      const bin = atob(b64);
-      const buf = new Uint8Array(bin.length);
-      for (let j=0;j<bin.length;j++) buf[j]=bin.charCodeAt(j);
-      const blob = new Blob([buf], {type:'audio/wav'});
-      audioBlobs[i] = { blob, filename: `${row.phone_number}_${row.customer_name.replace(/\s+/g,'_')}.wav` };
-
-      const blobUrl = URL.createObjectURL(blob);
-
-      // Update row
-      document.getElementById('status-'+i).innerHTML = statusBadge('done');
-      document.getElementById('audio-'+i).innerHTML =
+      document.getElementById('st-'+i).innerHTML='<span class="sbadge sb-done">✓ Done</span>';
+      document.getElementById('au-'+i).innerHTML=
         `<div style="display:flex;align-items:center;gap:6px;">
-          <audio class="mini" controls src="${blobUrl}"></audio>
-          <a href="${blobUrl}" download="${audioBlobs[i].filename}" class="btn-sm">↓</a>
+          <audio class="mini" controls src="${url}"></audio>
+          <a href="${url}" download="${fname}" class="dl-btn">↓</a>
         </div>`;
-      document.getElementById('csv-row-'+i).style.background = '#F0FBF6';
+      document.getElementById('tr-'+i).style.background='#F0FBF6';
       done++;
 
-    } catch(e) {
-      document.getElementById('status-'+i).innerHTML = statusBadge('error');
-      document.getElementById('audio-'+i).innerHTML =
-        `<span style="font-size:11px;color:var(--red);" title="${e.message}">✕ ${e.message.slice(0,40)}</span>`;
-      document.getElementById('csv-row-'+i).style.background = '#FFF5F5';
+    }catch(e){
+      document.getElementById('st-'+i).innerHTML='<span class="sbadge sb-err">✕ Error</span>';
+      document.getElementById('au-'+i).innerHTML=
+        `<span style="font-size:11px;color:var(--red);">${e.message.slice(0,50)}</span>`;
+      document.getElementById('tr-'+i).style.background='#FFF5F5';
       errs++;
     }
 
-    updateStats();
-    // Small delay to avoid rate limiting
-    if (i < csvRows.length-1) await new Promise(r=>setTimeout(r,300));
+    upd();
+    if(i<csvRows.length-1) await new Promise(r=>setTimeout(r,350));
   }
 
-  bulkRunning = false;
-  btn.disabled = false;
-  btn.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><polygon points="5 3 19 12 5 21 5 3"/></svg> Regenerate all';
-  if (done > 0) document.getElementById('bulkDownloadBtn').style.display = 'inline-flex';
+  bulkRunning=false;
+  btn.disabled=false;
+  btn.innerHTML='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polygon points="5 3 19 12 5 21 5 3"/></svg> Regenerate all';
+  if(done>0) document.getElementById('dlAllBtn').style.display='inline-flex';
 }
 
-// ── Download all as ZIP (uses browser-native approach without library) ────────
-async function downloadAllAudio() {
-  // Download each file individually since we can't zip without a library
-  // Tell user to download individually if needed, or download all one by one
-  const keys = Object.keys(audioBlobs);
-  if (!keys.length) return;
-
-  for (const i of keys) {
-    const { blob, filename } = audioBlobs[i];
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url; a.download = filename;
+// ══════════════════════════════════════════════
+//  DOWNLOAD ALL
+// ══════════════════════════════════════════════
+async function dlAll(){
+  const keys=Object.keys(audioBlobs);
+  for(const i of keys){
+    const {blob,fname}=audioBlobs[i];
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=url; a.download=fname;
     document.body.appendChild(a); a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
     await new Promise(r=>setTimeout(r,200));
   }
 }
-
-
-// ── Enter to generate ──
-document.getElementById('script').addEventListener('keydown', e => {
-  if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) generate();
-});
 </script>
 </body>
 </html>
