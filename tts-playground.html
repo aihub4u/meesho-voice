@@ -182,7 +182,7 @@
   /* ── Voice grid ── */
   .voice-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
     gap: 8px;
   }
   .voice-card {
@@ -217,6 +217,9 @@
   .voice-name  { font-size: 13px; font-weight: 600; color: var(--ink); }
   .voice-lang  { font-size: 11px; color: var(--ink3); margin-top: 1px; }
   .voice-check { margin-left: auto; font-size: 14px; color: var(--accent); display: none; }
+  .filter-btn { font-size: 12px; font-weight: 500; padding: 5px 12px; border-radius: 20px; border: 1.5px solid var(--border2); background: var(--surface); color: var(--ink2); cursor: pointer; transition: all .12s; }
+  .filter-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .voice-card.hidden { display: none; }
   .voice-card.active .voice-check { display: block; }
 
   /* ── Tuning sliders ── */
@@ -555,6 +558,11 @@
   <!-- Voice picker -->
   <div class="card">
     <div class="card-label">Voice</div>
+    <div style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap;">
+      <button class="filter-btn active" onclick="filterVoices('all',this)">All (44)</button>
+      <button class="filter-btn" onclick="filterVoices('F',this)">Female (18)</button>
+      <button class="filter-btn" onclick="filterVoices('M',this)">Male (26)</button>
+    </div>
     <div class="voice-grid" id="voiceGrid"></div>
   </div>
 
@@ -596,14 +604,50 @@
 
 <script>
 const VOICES = [
-  { id:'anushka',  label:'Anushka',  gender:'F', lang:'Hindi',    code:'hi-IN' },
-  { id:'arvind',   label:'Arvind',   gender:'M', lang:'Hindi',    code:'hi-IN' },
-  { id:'diya',     label:'Diya',     gender:'F', lang:'Hindi-EN', code:'hi-IN' },
-  { id:'neel',     label:'Neel',     gender:'M', lang:'Hindi-EN', code:'hi-IN' },
-  { id:'maitreyi', label:'Maitreyi', gender:'F', lang:'English',  code:'en-IN' },
-  { id:'yuval',    label:'Yuval',    gender:'M', lang:'English',  code:'en-IN' },
-  { id:'amol',     label:'Amol',     gender:'M', lang:'Marathi',  code:'mr-IN' },
-  { id:'amartya',  label:'Amartya',  gender:'M', lang:'Bengali',  code:'bn-IN' },
+  { id:'anushka',  label:'Anushka',  gender:'F', lang:'Hindi', code:'hi-IN' },
+  { id:'manisha',  label:'Manisha',  gender:'F', lang:'Hindi', code:'hi-IN' },
+  { id:'vidya',    label:'Vidya',    gender:'F', lang:'Hindi', code:'hi-IN' },
+  { id:'arya',     label:'Arya',     gender:'F', lang:'Hindi', code:'hi-IN' },
+  { id:'ritu',     label:'Ritu',     gender:'F', lang:'Hindi', code:'hi-IN' },
+  { id:'priya',    label:'Priya',    gender:'F', lang:'Hindi', code:'hi-IN' },
+  { id:'neha',     label:'Neha',     gender:'F', lang:'Hindi', code:'hi-IN' },
+  { id:'pooja',    label:'Pooja',    gender:'F', lang:'Hindi', code:'hi-IN' },
+  { id:'simran',   label:'Simran',   gender:'F', lang:'Hindi', code:'hi-IN' },
+  { id:'kavya',    label:'Kavya',    gender:'F', lang:'Hindi', code:'hi-IN' },
+  { id:'ishita',   label:'Ishita',   gender:'F', lang:'Hindi', code:'hi-IN' },
+  { id:'shreya',   label:'Shreya',   gender:'F', lang:'Hindi', code:'hi-IN' },
+  { id:'roopa',    label:'Roopa',    gender:'F', lang:'Hindi', code:'hi-IN' },
+  { id:'tanya',    label:'Tanya',    gender:'F', lang:'Hindi', code:'hi-IN' },
+  { id:'shruti',   label:'Shruti',   gender:'F', lang:'Hindi', code:'hi-IN' },
+  { id:'suhani',   label:'Suhani',   gender:'F', lang:'Hindi', code:'hi-IN' },
+  { id:'kavitha',  label:'Kavitha',  gender:'F', lang:'Hindi', code:'hi-IN' },
+  { id:'rupali',   label:'Rupali',   gender:'F', lang:'Hindi', code:'hi-IN' },
+  { id:'abhilash', label:'Abhilash', gender:'M', lang:'Hindi', code:'hi-IN' },
+  { id:'karun',    label:'Karun',    gender:'M', lang:'Hindi', code:'hi-IN' },
+  { id:'hitesh',   label:'Hitesh',   gender:'M', lang:'Hindi', code:'hi-IN' },
+  { id:'aditya',   label:'Aditya',   gender:'M', lang:'Hindi', code:'hi-IN' },
+  { id:'rahul',    label:'Rahul',    gender:'M', lang:'Hindi', code:'hi-IN' },
+  { id:'rohan',    label:'Rohan',    gender:'M', lang:'Hindi', code:'hi-IN' },
+  { id:'amit',     label:'Amit',     gender:'M', lang:'Hindi', code:'hi-IN' },
+  { id:'dev',      label:'Dev',      gender:'M', lang:'Hindi', code:'hi-IN' },
+  { id:'ratan',    label:'Ratan',    gender:'M', lang:'Hindi', code:'hi-IN' },
+  { id:'varun',    label:'Varun',    gender:'M', lang:'Hindi', code:'hi-IN' },
+  { id:'manan',    label:'Manan',    gender:'M', lang:'Hindi', code:'hi-IN' },
+  { id:'sumit',    label:'Sumit',    gender:'M', lang:'Hindi', code:'hi-IN' },
+  { id:'kabir',    label:'Kabir',    gender:'M', lang:'Hindi', code:'hi-IN' },
+  { id:'aayan',    label:'Aayan',    gender:'M', lang:'Hindi', code:'hi-IN' },
+  { id:'shubh',    label:'Shubh',    gender:'M', lang:'Hindi', code:'hi-IN' },
+  { id:'ashutosh', label:'Ashutosh', gender:'M', lang:'Hindi', code:'hi-IN' },
+  { id:'advait',   label:'Advait',   gender:'M', lang:'Hindi', code:'hi-IN' },
+  { id:'anand',    label:'Anand',    gender:'M', lang:'Hindi', code:'hi-IN' },
+  { id:'tarun',    label:'Tarun',    gender:'M', lang:'Hindi', code:'hi-IN' },
+  { id:'sunny',    label:'Sunny',    gender:'M', lang:'Hindi', code:'hi-IN' },
+  { id:'mani',     label:'Mani',     gender:'M', lang:'Hindi', code:'hi-IN' },
+  { id:'gokul',    label:'Gokul',    gender:'M', lang:'Hindi', code:'hi-IN' },
+  { id:'vijay',    label:'Vijay',    gender:'M', lang:'Hindi', code:'hi-IN' },
+  { id:'mohit',    label:'Mohit',    gender:'M', lang:'Hindi', code:'hi-IN' },
+  { id:'rehan',    label:'Rehan',    gender:'M', lang:'Hindi', code:'hi-IN' },
+  { id:'soham',    label:'Soham',    gender:'M', lang:'Hindi', code:'hi-IN' },
 ];
 
 const TEMPLATES = {
@@ -634,6 +678,16 @@ function renderVoices() {
   `).join('');
 }
 renderVoices();
+
+function filterVoices(gender, btn) {
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.voice-card').forEach(card => {
+    const v = VOICES.find(v => 'vc-'+v.id === card.id);
+    if (!v) return;
+    card.classList.toggle('hidden', gender !== 'all' && v.gender !== gender);
+  });
+}
 
 function selectVoice(id) {
   selectedVoice = id;
