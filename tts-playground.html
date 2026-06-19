@@ -673,7 +673,7 @@
     <div class="col-spec">
       <div class="col-spec-title">Required CSV columns</div>
       <div class="col-spec-grid">
-        <div><span class="col-tag">phone_number</span> <span class="col-desc">E.164 e.g. +919876543210</span></div>
+        <div><span class="col-tag">phone_number</span> <span class="col-desc">+919876543210 or 919876543210</span></div>
         <div><span class="col-tag">customer_name</span> <span class="col-desc">Used in {customer_name}</span></div>
         <div><span class="col-tag">store_name</span> <span class="col-desc">Used in {store_name}</span></div>
         <div><span class="col-tag">pickup_timings</span> <span class="col-desc">Used in {pickup_timings}</span></div>
@@ -1123,8 +1123,12 @@ function parseCSVText(text) {
     });
     row._idx = i;
     row._status = 'pending';
-    if (!row.phone_number || !/^\+\d{10,15}$/.test(row.phone_number)) {
-      errors.push(`Row ${i+2}: invalid phone "${row.phone_number}"`);
+    // Normalise phone: strip spaces/dashes/dots, auto-add + prefix
+    let ph = (row.phone_number || '').replace(/[\s\-\.]/g, '');
+    if (ph && !ph.startsWith('+')) ph = '+' + ph;
+    row.phone_number = ph;
+    if (!ph || !/^\+\d{10,15}$/.test(ph)) {
+      errors.push(`Row ${i+2}: invalid phone "${row.phone_number}" — expected 10–15 digits`);
     }
     return row;
   });
