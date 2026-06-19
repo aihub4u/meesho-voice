@@ -222,34 +222,27 @@
   .voice-card.hidden { display: none; }
   .voice-card.active .voice-check { display: block; }
 
-  /* ── Tuning sliders ── */
-  .tuning-row {
+  /* ── Sample rate picker ── */
+  .sr-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 16px;
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    gap: 8px;
   }
-  .slider-group label {
-    display: flex;
-    justify-content: space-between;
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--ink2);
-    margin-bottom: 6px;
-  }
-  .slider-group label span { font-weight: 400; color: var(--accent); }
-  input[type=range] {
-    width: 100%;
-    accent-color: var(--accent);
-    height: 4px;
+  .sr-card {
+    padding: 10px 12px;
+    border-radius: var(--radius);
+    border: 1.5px solid var(--border);
+    background: var(--surface);
     cursor: pointer;
+    transition: all .12s;
+    text-align: center;
   }
-  .slider-hints {
-    display: flex;
-    justify-content: space-between;
-    font-size: 10px;
-    color: var(--ink3);
-    margin-top: 4px;
-  }
+  .sr-card:hover { border-color: var(--accent); background: var(--accent-l); }
+  .sr-card.active { border-color: var(--accent); background: var(--accent-l); box-shadow: 0 0 0 3px rgba(91,63,232,.1); }
+  .sr-rate { font-size: 14px; font-weight: 700; color: var(--ink); }
+  .sr-label { font-size: 11px; color: var(--ink3); margin-top: 2px; }
+  .sr-card.active .sr-rate { color: var(--accent-d); }
+  .sr-card.active .sr-label { color: var(--accent); }
 
   /* ── Generate button ── */
   .generate-btn {
@@ -559,28 +552,18 @@
   <div class="card">
     <div class="card-label">Voice</div>
     <div style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap;">
-      <button class="filter-btn active" onclick="filterVoices('all',this)">All (44)</button>
-      <button class="filter-btn" onclick="filterVoices('F',this)">Female (18)</button>
-      <button class="filter-btn" onclick="filterVoices('M',this)">Male (26)</button>
+      <button class="filter-btn active" onclick="filterVoices('all',this)">All (37)</button>
+      <button class="filter-btn" onclick="filterVoices('F',this)">Female (14)</button>
+      <button class="filter-btn" onclick="filterVoices('M',this)">Male (23)</button>
     </div>
     <div class="voice-grid" id="voiceGrid"></div>
   </div>
 
-  <!-- Tuning -->
+  <!-- Sample rate -->
   <div class="card">
-    <div class="card-label">Fine-tune</div>
-    <div class="tuning-row">
-      <div class="slider-group">
-        <label>Pace <span id="paceVal">1.0×</span></label>
-        <input type="range" id="pace" min="0.5" max="2.0" step="0.1" value="1.0" oninput="document.getElementById('paceVal').textContent=parseFloat(this.value).toFixed(1)+'×'" />
-        <div class="slider-hints"><span>0.5× slow</span><span>2.0× fast</span></div>
-      </div>
-      <div class="slider-group">
-        <label>Pitch <span id="pitchVal">0</span></label>
-        <input type="range" id="pitch" min="-10" max="10" step="1" value="0" oninput="document.getElementById('pitchVal').textContent=(this.value>0?'+':'')+this.value" />
-        <div class="slider-hints"><span>−10 deeper</span><span>+10 higher</span></div>
-      </div>
-    </div>
+    <div class="card-label">Audio quality</div>
+    <div class="sr-grid" id="srGrid"></div>
+    <div style="margin-top:10px;font-size:12px;color:var(--ink3);">Higher sample rates sound richer. Use 8kHz for telephony (Karix calls), 24kHz for playback testing.</div>
   </div>
 
   <!-- Generate -->
@@ -604,10 +587,29 @@
 
 <script>
 const VOICES = [
-  { id:'anushka',  label:'Anushka',  gender:'F', lang:'Hindi', code:'hi-IN' },
-  { id:'manisha',  label:'Manisha',  gender:'F', lang:'Hindi', code:'hi-IN' },
-  { id:'vidya',    label:'Vidya',    gender:'F', lang:'Hindi', code:'hi-IN' },
-  { id:'arya',     label:'Arya',     gender:'F', lang:'Hindi', code:'hi-IN' },
+  { id:'shubh',    label:'Shubh',    gender:'M', lang:'Hindi', code:'hi-IN' },
+  { id:'aditya',   label:'Aditya',   gender:'M', lang:'Hindi', code:'hi-IN' },
+  { id:'rahul',    label:'Rahul',    gender:'M', lang:'Hindi', code:'hi-IN' },
+  { id:'rohan',    label:'Rohan',    gender:'M', lang:'Hindi', code:'hi-IN' },
+  { id:'amit',     label:'Amit',     gender:'M', lang:'Hindi', code:'hi-IN' },
+  { id:'dev',      label:'Dev',      gender:'M', lang:'Hindi', code:'hi-IN' },
+  { id:'ratan',    label:'Ratan',    gender:'M', lang:'Hindi', code:'hi-IN' },
+  { id:'varun',    label:'Varun',    gender:'M', lang:'Hindi', code:'hi-IN' },
+  { id:'manan',    label:'Manan',    gender:'M', lang:'Hindi', code:'hi-IN' },
+  { id:'sumit',    label:'Sumit',    gender:'M', lang:'Hindi', code:'hi-IN' },
+  { id:'kabir',    label:'Kabir',    gender:'M', lang:'Hindi', code:'hi-IN' },
+  { id:'aayan',    label:'Aayan',    gender:'M', lang:'Hindi', code:'hi-IN' },
+  { id:'ashutosh', label:'Ashutosh', gender:'M', lang:'Hindi', code:'hi-IN' },
+  { id:'advait',   label:'Advait',   gender:'M', lang:'Hindi', code:'hi-IN' },
+  { id:'anand',    label:'Anand',    gender:'M', lang:'Hindi', code:'hi-IN' },
+  { id:'tarun',    label:'Tarun',    gender:'M', lang:'Hindi', code:'hi-IN' },
+  { id:'sunny',    label:'Sunny',    gender:'M', lang:'Hindi', code:'hi-IN' },
+  { id:'mani',     label:'Mani',     gender:'M', lang:'Hindi', code:'hi-IN' },
+  { id:'gokul',    label:'Gokul',    gender:'M', lang:'Hindi', code:'hi-IN' },
+  { id:'vijay',    label:'Vijay',    gender:'M', lang:'Hindi', code:'hi-IN' },
+  { id:'mohit',    label:'Mohit',    gender:'M', lang:'Hindi', code:'hi-IN' },
+  { id:'rehan',    label:'Rehan',    gender:'M', lang:'Hindi', code:'hi-IN' },
+  { id:'soham',    label:'Soham',    gender:'M', lang:'Hindi', code:'hi-IN' },
   { id:'ritu',     label:'Ritu',     gender:'F', lang:'Hindi', code:'hi-IN' },
   { id:'priya',    label:'Priya',    gender:'F', lang:'Hindi', code:'hi-IN' },
   { id:'neha',     label:'Neha',     gender:'F', lang:'Hindi', code:'hi-IN' },
@@ -622,32 +624,6 @@ const VOICES = [
   { id:'suhani',   label:'Suhani',   gender:'F', lang:'Hindi', code:'hi-IN' },
   { id:'kavitha',  label:'Kavitha',  gender:'F', lang:'Hindi', code:'hi-IN' },
   { id:'rupali',   label:'Rupali',   gender:'F', lang:'Hindi', code:'hi-IN' },
-  { id:'abhilash', label:'Abhilash', gender:'M', lang:'Hindi', code:'hi-IN' },
-  { id:'karun',    label:'Karun',    gender:'M', lang:'Hindi', code:'hi-IN' },
-  { id:'hitesh',   label:'Hitesh',   gender:'M', lang:'Hindi', code:'hi-IN' },
-  { id:'aditya',   label:'Aditya',   gender:'M', lang:'Hindi', code:'hi-IN' },
-  { id:'rahul',    label:'Rahul',    gender:'M', lang:'Hindi', code:'hi-IN' },
-  { id:'rohan',    label:'Rohan',    gender:'M', lang:'Hindi', code:'hi-IN' },
-  { id:'amit',     label:'Amit',     gender:'M', lang:'Hindi', code:'hi-IN' },
-  { id:'dev',      label:'Dev',      gender:'M', lang:'Hindi', code:'hi-IN' },
-  { id:'ratan',    label:'Ratan',    gender:'M', lang:'Hindi', code:'hi-IN' },
-  { id:'varun',    label:'Varun',    gender:'M', lang:'Hindi', code:'hi-IN' },
-  { id:'manan',    label:'Manan',    gender:'M', lang:'Hindi', code:'hi-IN' },
-  { id:'sumit',    label:'Sumit',    gender:'M', lang:'Hindi', code:'hi-IN' },
-  { id:'kabir',    label:'Kabir',    gender:'M', lang:'Hindi', code:'hi-IN' },
-  { id:'aayan',    label:'Aayan',    gender:'M', lang:'Hindi', code:'hi-IN' },
-  { id:'shubh',    label:'Shubh',    gender:'M', lang:'Hindi', code:'hi-IN' },
-  { id:'ashutosh', label:'Ashutosh', gender:'M', lang:'Hindi', code:'hi-IN' },
-  { id:'advait',   label:'Advait',   gender:'M', lang:'Hindi', code:'hi-IN' },
-  { id:'anand',    label:'Anand',    gender:'M', lang:'Hindi', code:'hi-IN' },
-  { id:'tarun',    label:'Tarun',    gender:'M', lang:'Hindi', code:'hi-IN' },
-  { id:'sunny',    label:'Sunny',    gender:'M', lang:'Hindi', code:'hi-IN' },
-  { id:'mani',     label:'Mani',     gender:'M', lang:'Hindi', code:'hi-IN' },
-  { id:'gokul',    label:'Gokul',    gender:'M', lang:'Hindi', code:'hi-IN' },
-  { id:'vijay',    label:'Vijay',    gender:'M', lang:'Hindi', code:'hi-IN' },
-  { id:'mohit',    label:'Mohit',    gender:'M', lang:'Hindi', code:'hi-IN' },
-  { id:'rehan',    label:'Rehan',    gender:'M', lang:'Hindi', code:'hi-IN' },
-  { id:'soham',    label:'Soham',    gender:'M', lang:'Hindi', code:'hi-IN' },
 ];
 
 const TEMPLATES = {
@@ -657,7 +633,15 @@ const TEMPLATES = {
   hi2: "Namaste {customer_name}, aapke {store_name} ke order mein thodi deri ho gayi hai. Yeh {pickup_timings} tak pickup ke liye available ho jayega. Asuvidhaa ke liye khed hai.",
 };
 
-let selectedVoice = 'anushka';
+let selectedVoice = 'shubh';
+let selectedSR = 8000;  // 8kHz default — telephony-optimised for Karix
+
+const SAMPLE_RATES = [
+  { hz: 8000,  label: '8 kHz',  desc: 'Telephony / Karix' },
+  { hz: 16000, label: '16 kHz', desc: 'Good quality' },
+  { hz: 22050, label: '22 kHz', desc: 'High quality' },
+  { hz: 24000, label: '24 kHz', desc: 'Premium (default)' },
+];
 let currentBlobUrl = null;
 let currentFilename = 'audio.wav';
 let history = [];
@@ -678,6 +662,23 @@ function renderVoices() {
   `).join('');
 }
 renderVoices();
+renderSampleRates();
+
+function renderSampleRates() {
+  const grid = document.getElementById('srGrid');
+  grid.innerHTML = SAMPLE_RATES.map(sr => `
+    <div class="sr-card ${sr.hz===selectedSR?'active':''}" onclick="selectSR(${sr.hz},this)">
+      <div class="sr-rate">${sr.label}</div>
+      <div class="sr-label">${sr.desc}</div>
+    </div>
+  `).join('');
+}
+
+function selectSR(hz, el) {
+  selectedSR = hz;
+  document.querySelectorAll('.sr-card').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+}
 
 function filterVoices(gender, btn) {
   document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
@@ -798,9 +799,6 @@ async function generate() {
   btn.querySelector('.btn-icon') && (btn.querySelector('.btn-icon').style.display = 'none');
 
   const voice = VOICES.find(v => v.id === selectedVoice);
-  const pace  = parseFloat(document.getElementById('pace').value);
-  const pitch = parseInt(document.getElementById('pitch').value);
-
   try {
     const res = await fetch('https://api.sarvam.ai/text-to-speech', {
       method: 'POST',
@@ -812,12 +810,8 @@ async function generate() {
         inputs: [text],
         target_language_code: voice.code,
         speaker: voice.id,
-        pitch,
-        pace,
-        loudness: 1.5,
-        speech_sample_rate: 8000,
-        enable_preprocessing: true,
-        model: 'bulbul:v2',
+        speech_sample_rate: selectedSR,
+        model: 'bulbul:v3',
       }),
     });
 
@@ -846,10 +840,10 @@ async function generate() {
     const card = document.getElementById('playerCard');
     card.classList.add('visible');
     document.getElementById('playerMeta').textContent =
-      `${voice.label} · ${voice.lang} · pace ${pace}× · pitch ${pitch>0?'+':''}${pitch}`;
+      `${voice.label} · ${voice.lang} · ${selectedSR/1000}kHz`;
 
     // Add to history
-    addHistory({ text, voice, pace, pitch, blobUrl: currentBlobUrl, filename: currentFilename });
+    addHistory({ text, voice, sr: selectedSR, blobUrl: currentBlobUrl, filename: currentFilename });
 
   } catch(e) {
     showError(e.message);
@@ -875,7 +869,7 @@ function renderHistory() {
     <div class="history-item">
       <div class="h-voice-dot"></div>
       <div class="h-text">${h.text.replace(/</g,'&lt;').slice(0, 80)}${h.text.length>80?'…':''}</div>
-      <span class="h-meta">${h.voice.label} · ${h.pace}×</span>
+      <span class="h-meta">${h.voice.label} · ${h.sr/1000}kHz</span>
       <button class="h-play" onclick="playHistoryItem(${i})">▶ Play</button>
     </div>
   `).join('');
@@ -890,7 +884,7 @@ function playHistoryItem(i) {
   document.getElementById('playBtn').classList.add('playing');
   document.getElementById('playerCard').classList.add('visible');
   document.getElementById('playerMeta').textContent =
-    `${h.voice.label} · ${h.voice.lang} · pace ${h.pace}× · pitch ${h.pitch>0?'+':''}${h.pitch}`;
+    `${h.voice.label} · ${h.voice.lang} · ${h.sr/1000}kHz`;
   currentBlobUrl  = h.blobUrl;
   currentFilename = h.filename;
 }
