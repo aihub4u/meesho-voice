@@ -1,0 +1,976 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Voice Bot Flow Builder — Meesho</title>
+<style>
+:root{
+  --bg:#F7F6F2;--surface:#fff;--border:#E4E1D9;--border2:#CBC8BF;
+  --ink:#1A1916;--ink2:#6B6860;--ink3:#A8A49C;
+  --accent:#5B3FE8;--accent-l:#EAE6FD;--accent-d:#3D29B5;
+  --green:#0F6E56;--green-l:#E1F5EE;
+  --red:#B91C1C;--red-l:#FEE2E2;
+  --amber:#854F0B;--amber-l:#FFF4E0;
+  --teal:#0E7490;--teal-l:#E0F2FE;
+  --r:8px;--rl:12px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--ink);height:100vh;display:flex;flex-direction:column;overflow:hidden;}
+
+/* ── Top bar ── */
+.topbar{height:52px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;padding:0 18px;flex-shrink:0;}
+.logo{width:28px;height:28px;background:var(--accent);border-radius:7px;display:flex;align-items:center;justify-content:center;}
+.logo svg{width:16px;height:16px;}
+.topbar h1{font-size:14px;font-weight:700;letter-spacing:-.02em;margin-right:8px;}
+.topbar-gap{flex:1;}
+.tb-btn{padding:6px 14px;border-radius:var(--r);font-size:12px;font-weight:600;cursor:pointer;border:none;transition:all .12s;}
+.tb-btn.pri{background:var(--accent);color:#fff;}
+.tb-btn.pri:hover{background:var(--accent-d);}
+.tb-btn.sec{background:var(--surface);color:var(--ink2);border:1.5px solid var(--border2);}
+.tb-btn.sec:hover{border-color:var(--accent);color:var(--accent);}
+.tb-url{font-size:12px;font-family:monospace;padding:5px 10px;border:1.5px solid var(--border2);border-radius:var(--r);width:260px;outline:none;color:var(--ink);}
+.tb-url:focus{border-color:var(--accent);}
+.conn-dot{width:8px;height:8px;border-radius:50%;background:#EF4444;flex-shrink:0;}
+.conn-dot.ok{background:#22C55E;}
+.conn-lbl{font-size:11px;color:var(--ink3);}
+
+/* ── Main layout ── */
+.main{flex:1;display:flex;overflow:hidden;}
+
+/* ── Left panel: node palette + flow settings ── */
+.sidebar{width:240px;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;overflow-y:auto;}
+.panel-section{padding:14px 14px 10px;border-bottom:1px solid var(--border);}
+.panel-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--ink3);margin-bottom:10px;}
+
+/* Node type palette */
+.node-type{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:var(--r);border:1.5px solid var(--border);background:var(--bg);cursor:grab;margin-bottom:6px;user-select:none;transition:all .12s;}
+.node-type:hover{border-color:var(--accent);background:var(--accent-l);}
+.nt-icon{width:28px;height:28px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;}
+.nt-name{font-size:12px;font-weight:600;color:var(--ink);}
+.nt-desc{font-size:10px;color:var(--ink3);}
+
+/* Flow settings form */
+.field{margin-bottom:10px;}
+.field label{font-size:11px;font-weight:600;color:var(--ink2);display:block;margin-bottom:4px;}
+.field input,.field select,.field textarea{width:100%;padding:7px 10px;border:1.5px solid var(--border);border-radius:var(--r);font-size:12px;font-family:system-ui;color:var(--ink);background:var(--bg);outline:none;transition:border-color .12s;}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--accent);}
+
+/* ── Canvas ── */
+.canvas-wrap{flex:1;position:relative;overflow:auto;background:var(--bg);}
+#canvas{position:relative;min-width:1200px;min-height:800px;}
+
+/* ── Flow nodes ── */
+.fnode{position:absolute;width:220px;border-radius:var(--rl);border:1.5px solid var(--border);background:var(--surface);cursor:move;user-select:none;box-shadow:0 2px 8px rgba(0,0,0,.06);transition:box-shadow .12s;}
+.fnode:hover{box-shadow:0 4px 16px rgba(0,0,0,.1);}
+.fnode.selected{border-color:var(--accent);box-shadow:0 0 0 3px rgba(91,63,232,.15);}
+.fn-header{padding:10px 12px 8px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:7px;}
+.fn-icon{width:24px;height:24px;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0;}
+.fn-title{font-size:12px;font-weight:700;color:var(--ink);flex:1;outline:none;border:none;background:transparent;}
+.fn-id{font-size:10px;color:var(--ink3);font-family:monospace;}
+.fn-body{padding:8px 12px 10px;font-size:12px;color:var(--ink2);line-height:1.5;}
+.fn-text{font-size:11px;color:var(--ink);background:var(--bg);border-radius:5px;padding:6px 8px;margin-bottom:6px;line-height:1.55;max-height:80px;overflow:hidden;text-overflow:ellipsis;}
+.fn-footer{padding:6px 12px 8px;border-top:1px solid var(--border);display:flex;gap:6px;}
+.fn-action{font-size:10px;font-weight:600;padding:3px 8px;border-radius:5px;border:none;cursor:pointer;transition:all .12s;}
+
+/* Node type colors */
+.fnode[data-type=speak]    .fn-header{background:#EAE6FD;}
+.fnode[data-type=speak]    .fn-icon  {background:var(--accent);color:#fff;}
+.fnode[data-type=collect]  .fn-header{background:#E0F2FE;}
+.fnode[data-type=collect]  .fn-icon  {background:var(--teal);color:#fff;}
+.fnode[data-type=branch]   .fn-header{background:var(--amber-l);}
+.fnode[data-type=branch]   .fn-icon  {background:var(--amber);color:#fff;}
+.fnode[data-type=end]      .fn-header{background:var(--red-l);}
+.fnode[data-type=end]      .fn-icon  {background:var(--red);color:#fff;}
+
+/* Connector ports */
+.port{position:absolute;width:12px;height:12px;border-radius:50%;background:var(--surface);border:2px solid var(--border2);cursor:crosshair;transition:all .12s;z-index:5;}
+.port:hover,.port.active{border-color:var(--accent);background:var(--accent-l);transform:scale(1.3);}
+.port.out{right:-7px;top:50%;transform:translateY(-50%);}
+.port.out:hover,.port.out.active{transform:translateY(-50%) scale(1.3);}
+.port.in{left:-7px;top:50%;transform:translateY(-50%);}
+.port.in:hover,.port.in.active{transform:translateY(-50%) scale(1.3);}
+
+/* SVG connector layer */
+#conn-svg{position:absolute;top:0;left:0;pointer-events:none;width:100%;height:100%;}
+.conn-path{fill:none;stroke:var(--border2);stroke-width:2;transition:stroke .12s;}
+.conn-path:hover{stroke:var(--accent);}
+.conn-path.active{stroke:var(--accent);}
+
+/* ── Right panel: node editor ── */
+.editor{width:280px;background:var(--surface);border-left:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto;flex-shrink:0;}
+.editor-empty{flex:1;display:flex;align-items:center;justify-content:center;color:var(--ink3);font-size:13px;text-align:center;padding:20px;}
+.editor-content{padding:16px;display:none;}
+.editor-content.show{display:block;}
+.intent-row{display:grid;grid-template-columns:1fr auto;gap:6px;margin-bottom:6px;}
+.intent-kw{padding:6px 8px;border:1.5px solid var(--border);border-radius:var(--r);font-size:11px;font-family:monospace;width:100%;outline:none;}
+.intent-kw:focus{border-color:var(--accent);}
+.intent-next{padding:6px 8px;border:1.5px solid var(--border);border-radius:var(--r);font-size:11px;width:100%;outline:none;background:var(--bg);}
+.rm-btn{padding:4px 8px;border:none;border-radius:5px;background:var(--red-l);color:var(--red);cursor:pointer;font-size:11px;font-weight:700;}
+.add-btn{font-size:11px;font-weight:600;padding:5px 10px;border-radius:var(--r);border:1.5px dashed var(--border2);background:var(--bg);color:var(--ink2);cursor:pointer;width:100%;transition:all .12s;}
+.add-btn:hover{border-color:var(--accent);color:var(--accent);}
+
+/* ── Test panel ── */
+.test-panel{background:var(--surface);border-top:1px solid var(--border);height:200px;flex-shrink:0;display:flex;flex-direction:column;}
+.test-header{padding:8px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;}
+.test-title{font-size:12px;font-weight:700;color:var(--ink);}
+.test-body{flex:1;display:flex;overflow:hidden;}
+.test-log{flex:1;overflow-y:auto;padding:8px 12px;font-family:monospace;font-size:11px;background:#1C1A2E;}
+.tl-entry{margin-bottom:3px;line-height:1.5;}
+.tl-bot{color:#9B99C8;}
+.tl-user{color:#5DCAA5;}
+.tl-sys{color:#FAC775;}
+.tl-err{color:#F09595;}
+.test-input-wrap{width:260px;border-left:1px solid var(--border);display:flex;flex-direction:column;padding:10px;}
+.test-vars{flex:1;font-size:11px;font-family:monospace;border:1.5px solid var(--border);border-radius:var(--r);padding:8px;outline:none;resize:none;color:var(--ink);background:var(--bg);}
+.test-vars:focus{border-color:var(--accent);}
+.test-actions{display:flex;gap:6px;margin-top:8px;}
+.sim-input{flex:1;padding:6px 8px;border:1.5px solid var(--border);border-radius:var(--r);font-size:12px;outline:none;}
+.sim-input:focus{border-color:var(--accent);}
+
+/* ── Misc ── */
+.badge{display:inline-block;font-size:10px;font-weight:700;padding:2px 7px;border-radius:20px;margin-left:6px;}
+.badge-speak{background:var(--accent-l);color:var(--accent-d);}
+.badge-collect{background:var(--teal-l);color:var(--teal);}
+.badge-end{background:var(--red-l);color:var(--red);}
+
+.section-divider{height:1px;background:var(--border);margin:8px 0;}
+
+@media(max-width:900px){
+  .sidebar{width:180px;}
+  .editor{width:220px;}
+}
+</style>
+</head>
+<body>
+
+<!-- ── Top bar ── -->
+<div class="topbar">
+  <div class="logo">
+    <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round">
+      <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/>
+      <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+    </svg>
+  </div>
+  <h1>Voice Bot Builder</h1>
+  <select id="flowSelect" style="font-size:12px;padding:5px 8px;border:1.5px solid var(--border2);border-radius:var(--r);background:var(--bg);color:var(--ink);outline:none;" onchange="loadFlow(this.value)">
+    <option value="meesho-pickup">Meesho pickup (Hindi)</option>
+    <option value="meesho-pickup-en">Meesho pickup (English)</option>
+    <option value="__new__">+ New flow</option>
+  </select>
+  <div class="topbar-gap"></div>
+  <input class="tb-url" id="backendUrl" placeholder="https://meesho-voice-api.onrender.com" type="text"/>
+  <div class="conn-dot" id="connDot"></div>
+  <span class="conn-lbl" id="connLbl">Not connected</span>
+  <button class="tb-btn sec" onclick="testConn()">Test</button>
+  <button class="tb-btn sec" onclick="loadFromBackend()">Load</button>
+  <button class="tb-btn pri" onclick="saveToBackend()">Save &amp; deploy</button>
+  <button class="tb-btn pri" style="background:#0F6E56;" onclick="showLaunchModal()">📞 Launch campaign</button>
+</div>
+
+<!-- ── Main ── -->
+<div class="main">
+
+  <!-- Left sidebar -->
+  <div class="sidebar">
+    <div class="panel-section">
+      <div class="panel-title">Add node</div>
+      <div class="node-type" draggable="true" ondragstart="startDrag('speak',event)">
+        <div class="nt-icon" style="background:var(--accent);color:#fff;">🔊</div>
+        <div><div class="nt-name">Speak</div><div class="nt-desc">Bot says something</div></div>
+      </div>
+      <div class="node-type" draggable="true" ondragstart="startDrag('collect',event)">
+        <div class="nt-icon" style="background:var(--teal);color:#fff;">🎤</div>
+        <div><div class="nt-name">Collect</div><div class="nt-desc">Wait for user response</div></div>
+      </div>
+      <div class="node-type" draggable="true" ondragstart="startDrag('end',event)">
+        <div class="nt-icon" style="background:var(--red);color:#fff;">⏹</div>
+        <div><div class="nt-name">End</div><div class="nt-desc">Hang up call</div></div>
+      </div>
+    </div>
+
+    <div class="panel-section">
+      <div class="panel-title">Flow settings</div>
+      <div class="field"><label>Flow ID</label><input id="flowId" placeholder="meesho-pickup"/></div>
+      <div class="field"><label>Flow name</label><input id="flowName" placeholder="Meesho pickup reminder"/></div>
+      <div class="field">
+        <label>Language</label>
+        <select id="flowLang">
+          <option value="hi-IN">Hindi (hi-IN)</option>
+          <option value="en-IN">English (en-IN)</option>
+          <option value="hi-IN">Hinglish (hi-IN)</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Default voice</label>
+        <select id="flowSpeaker">
+          <option value="priya">Priya (F · Hindi)</option>
+          <option value="neha">Neha (F · Hindi)</option>
+          <option value="simran">Simran (F · Hindi)</option>
+          <option value="rahul">Rahul (M · Hindi)</option>
+          <option value="rohan">Rohan (M · Hindi)</option>
+          <option value="maitreyi">Maitreyi (F · English)</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="panel-section" style="flex:1;">
+      <div class="panel-title">Variable tokens</div>
+      <div style="font-size:11px;color:var(--ink2);line-height:1.7;">
+        Click to copy into node text:
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:8px;" id="varTokens">
+        <button class="fn-action" style="background:var(--accent-l);color:var(--accent-d);" onclick="copyToken('{customer_name}')">{customer_name}</button>
+        <button class="fn-action" style="background:var(--accent-l);color:var(--accent-d);" onclick="copyToken('{store_name}')">{store_name}</button>
+        <button class="fn-action" style="background:var(--accent-l);color:var(--accent-d);" onclick="copyToken('{pickup_timings}')">{pickup_timings}</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Canvas -->
+  <div class="canvas-wrap" id="canvasWrap"
+    ondragover="event.preventDefault()"
+    ondrop="dropNode(event)">
+    <div id="canvas">
+      <svg id="conn-svg"></svg>
+    </div>
+  </div>
+
+  <!-- Right editor -->
+  <div class="editor" id="editor">
+    <div class="editor-empty" id="editorEmpty">Select a node to edit it</div>
+    <div class="editor-content" id="editorContent">
+      <div class="panel-title" id="edNodeType">Node editor</div>
+      <div style="margin-bottom:14px;">
+        <div class="field"><label>Node ID</label><input id="edId" oninput="updateSelectedNode()"/></div>
+        <div class="field" id="edTextField">
+          <label>Bot says</label>
+          <textarea id="edText" rows="4" oninput="updateSelectedNode()"></textarea>
+        </div>
+        <div class="field" id="edNextField">
+          <label>Next node</label>
+          <input id="edNext" placeholder="node-id" oninput="updateSelectedNode()"/>
+        </div>
+        <div class="field" id="edTimeoutField">
+          <label>Listen timeout (ms)</label>
+          <input id="edTimeout" type="number" value="6000" oninput="updateSelectedNode()"/>
+        </div>
+      </div>
+
+      <!-- Intents (collect nodes) -->
+      <div id="edIntentsWrap" style="display:none;">
+        <div class="panel-title" style="margin-bottom:8px;">Intents — what user might say</div>
+        <div id="edIntents"></div>
+        <button class="add-btn" onclick="addIntent()">+ Add intent</button>
+        <div class="section-divider"></div>
+        <div class="field">
+          <label>Fallback node (no match)</label>
+          <input id="edFallback" placeholder="node-id" oninput="updateSelectedNode()"/>
+        </div>
+      </div>
+
+      <div class="section-divider"></div>
+      <button class="tb-btn sec" style="width:100%;font-size:12px;" onclick="previewNodeAudio()">🔊 Preview audio</button>
+      <div style="margin-top:6px;">
+        <audio id="nodeAudio" controls style="width:100%;height:30px;display:none;margin-top:6px;"></audio>
+      </div>
+      <div class="section-divider"></div>
+      <button class="tb-btn sec" style="width:100%;font-size:12px;color:var(--red);border-color:var(--red);" onclick="deleteSelectedNode()">🗑 Delete node</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Test panel ── -->
+<div class="test-panel">
+  <div class="test-header">
+    <span class="test-title">🧪 Flow simulator</span>
+    <button class="tb-btn sec" style="font-size:11px;padding:4px 10px;" onclick="resetSim()">Reset</button>
+    <button class="tb-btn pri" style="font-size:11px;padding:4px 10px;" onclick="startSim()">▶ Start simulation</button>
+    <div style="flex:1;"></div>
+    <span style="font-size:11px;color:var(--ink3);" id="simStatus">Not started</span>
+  </div>
+  <div class="test-body">
+    <div class="test-log" id="testLog">
+      <div class="tl-entry tl-sys">Flow simulator ready. Click "Start simulation" to test your flow.</div>
+    </div>
+    <div class="test-input-wrap">
+      <div style="font-size:11px;font-weight:600;color:var(--ink2);margin-bottom:5px;">Test variables (JSON)</div>
+      <textarea class="test-vars" id="testVars" rows="4">{
+  "customer_name": "Riya Sharma",
+  "store_name": "Lajpat Nagar Store",
+  "pickup_timings": "10am to 6pm"
+}</textarea>
+      <div class="test-actions">
+        <input class="sim-input" id="simInput" placeholder="Type your reply…" onkeydown="if(event.key==='Enter')sendSimInput()"/>
+        <button class="tb-btn pri" style="font-size:11px;padding:5px 10px;" onclick="sendSimInput()">Send</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ════════════════════════════════════════════
+//  STATE
+// ════════════════════════════════════════════
+let nodes     = [];           // { id, type, text, next, intents, fallback, timeout, x, y }
+let conns     = [];           // { from, to }
+let selected  = null;         // selected node id
+let dragType  = null;
+let simEngine = null;
+let simVars   = {};
+
+const ICONS = { speak:'🔊', collect:'🎤', branch:'🔀', end:'⏹' };
+
+// ════════════════════════════════════════════
+//  LOAD DEFAULT FLOW
+// ════════════════════════════════════════════
+const DEFAULT_FLOWS = {
+  'meesho-pickup': {
+    id:'meesho-pickup', name:'Meesho pickup (Hindi)', lang:'hi-IN', speaker:'priya',
+    nodes:[
+      {id:'greeting',   type:'speak',   text:'Namaste {customer_name}! Aapka Meesho order {store_name} par pahunch gaya hai.',x:60,  y:80},
+      {id:'ask_confirm',type:'collect', text:'Kya aap aaj {pickup_timings} ke beech pickup kar sakte hain?',timeout:6000,x:340,y:80,
+       intents:[
+         {match:'yes,haan,ha,theek,zaroor,bilkul,okay',next:'confirmed'},
+         {match:'no,nahi,nai,kal,tomorrow,baad',       next:'reschedule'},
+       ],fallback:'ask_confirm_retry'},
+      {id:'ask_confirm_retry',type:'collect',text:'Maafi chahta hoon, mujhe samajh nahi aaya. Kripya haan ya nahi bolein.',timeout:5000,x:340,y:240,
+       intents:[
+         {match:'yes,haan,ha,okay',next:'confirmed'},
+         {match:'no,nahi,kal',     next:'reschedule'},
+       ],fallback:'confirmed'},
+      {id:'confirmed',  type:'speak',   text:'Bahut accha! Humein khushi hogi aapko {store_name} mein dekhkar. Dhanyawad!',next:'end',x:60,  y:380},
+      {id:'reschedule', type:'speak',   text:'Koi baat nahi. Aapka order 3 din tak rakha jayega. Dhanyawad!',             next:'end',x:620, y:380},
+      {id:'end',        type:'end',     text:'',x:340,y:500},
+    ]
+  },
+  'meesho-pickup-en': {
+    id:'meesho-pickup-en', name:'Meesho pickup (English)', lang:'en-IN', speaker:'maitreyi',
+    nodes:[
+      {id:'greeting',   type:'speak',   text:'Hello {customer_name}! Your Meesho order has arrived at {store_name}.',x:60,  y:80},
+      {id:'ask_confirm',type:'collect', text:'Can you confirm you will pick it up today between {pickup_timings}?',timeout:6000,x:340,y:80,
+       intents:[
+         {match:'yes,sure,confirm,okay,will,absolutely',next:'confirmed'},
+         {match:'no,cannot,cant,tomorrow,later,busy',   next:'reschedule'},
+       ],fallback:'ask_confirm_retry'},
+      {id:'ask_confirm_retry',type:'collect',text:"I'm sorry, I didn't catch that. Please say yes or no.",timeout:5000,x:340,y:240,
+       intents:[
+         {match:'yes,sure,okay',  next:'confirmed'},
+         {match:'no,cannot,later',next:'reschedule'},
+       ],fallback:'confirmed'},
+      {id:'confirmed',  type:'speak',   text:'Wonderful! We look forward to seeing you at {store_name}. Have a great day!',next:'end',x:60,  y:380},
+      {id:'reschedule', type:'speak',   text:'No problem. Your order will be held for 3 days. Goodbye!',                   next:'end',x:620, y:380},
+      {id:'end',        type:'end',     text:'',x:340,y:500},
+    ]
+  },
+};
+
+function loadFlow(id) {
+  if (id === '__new__') { newFlow(); return; }
+  const f = DEFAULT_FLOWS[id];
+  if (!f) return;
+  nodes = f.nodes.map(n => ({...n}));
+  document.getElementById('flowId').value    = f.id;
+  document.getElementById('flowName').value  = f.name;
+  document.getElementById('flowLang').value  = f.lang || 'hi-IN';
+  document.getElementById('flowSpeaker').value = f.speaker || 'priya';
+  selected = null;
+  render();
+}
+
+function newFlow() {
+  nodes = [
+    {id:'greeting', type:'speak',   text:'Hello! How can I help you?', next:'ask',   x:100, y:80},
+    {id:'ask',      type:'collect', text:'Please say yes or no.',       timeout:5000,
+     intents:[{match:'yes',next:'yes_node'},{match:'no',next:'no_node'}], fallback:'ask',
+     x:350, y:80},
+    {id:'yes_node', type:'speak',   text:'Great, thank you!', next:'end', x:200, y:260},
+    {id:'no_node',  type:'speak',   text:'No problem, goodbye!',next:'end',x:500, y:260},
+    {id:'end',      type:'end',     text:'',                             x:350, y:420},
+  ];
+  document.getElementById('flowId').value    = 'my-flow';
+  document.getElementById('flowName').value  = 'My voice bot';
+  selected = null;
+  render();
+}
+
+// Init
+loadFlow('meesho-pickup');
+
+// ════════════════════════════════════════════
+//  RENDER
+// ════════════════════════════════════════════
+function render() {
+  const canvas = document.getElementById('canvas');
+  // Remove old nodes (keep SVG)
+  canvas.querySelectorAll('.fnode').forEach(e => e.remove());
+
+  nodes.forEach(n => {
+    const el = document.createElement('div');
+    el.className = `fnode${selected===n.id?' selected':''}`;
+    el.dataset.type = n.type;
+    el.dataset.id   = n.id;
+    el.style.left   = n.x + 'px';
+    el.style.top    = n.y + 'px';
+
+    const short = (n.text||'').slice(0,80) + ((n.text||'').length>80?'…':'');
+    el.innerHTML = `
+      <div class="fn-header">
+        <div class="fn-icon">${ICONS[n.type]||'?'}</div>
+        <div style="flex:1;">
+          <div class="fn-title">${n.id}</div>
+          <div class="fn-id">${n.type}</div>
+        </div>
+      </div>
+      ${n.type!=='end'?`<div class="fn-body"><div class="fn-text">${short||'<em style="color:var(--ink3)">No text set</em>'}</div></div>`:''}
+      ${n.type==='collect'?`<div class="fn-body" style="padding-top:0;"><span style="font-size:10px;color:var(--teal);">🎤 ${(n.intents||[]).length} intent(s) · fallback: ${n.fallback||'—'}</span></div>`:''}
+      <div class="port in"  data-node="${n.id}" data-dir="in"></div>
+      ${n.type!=='end'?`<div class="port out" data-node="${n.id}" data-dir="out"></div>`:''}
+    `;
+
+    el.addEventListener('mousedown', e => {
+      if (e.target.classList.contains('port')) return;
+      selectNode(n.id);
+      startDragNode(n, e);
+    });
+
+    canvas.appendChild(el);
+  });
+
+  renderConnections();
+}
+
+function renderConnections() {
+  const svg = document.getElementById('conn-svg');
+  svg.innerHTML = `<defs><marker id="ah" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="#CBC8BF" stroke-width="2" stroke-linecap="round"/></marker></defs>`;
+
+  nodes.forEach(n => {
+    const targets = [];
+    if (n.next) targets.push(n.next);
+    (n.intents||[]).forEach(i => { if(i.next) targets.push(i.next); });
+    if (n.fallback) targets.push(n.fallback);
+
+    targets.forEach(tid => {
+      const from = n;
+      const to   = nodes.find(x => x.id===tid);
+      if (!to) return;
+
+      const x1 = from.x + 220, y1 = from.y + 60;
+      const x2 = to.x,         y2 = to.y + 60;
+      const cx = (x1+x2)/2;
+
+      const path = document.createElementNS('http://www.w3.org/2000/svg','path');
+      path.setAttribute('d', `M${x1},${y1} C${cx},${y1} ${cx},${y2} ${x2},${y2}`);
+      path.setAttribute('class','conn-path');
+      path.setAttribute('marker-end','url(#ah)');
+      svg.appendChild(path);
+    });
+  });
+}
+
+// ════════════════════════════════════════════
+//  NODE DRAG
+// ════════════════════════════════════════════
+function startDragNode(n, e) {
+  const startX = e.clientX - n.x;
+  const startY = e.clientY - n.y;
+
+  const move = ev => {
+    n.x = ev.clientX - startX;
+    n.y = ev.clientY - startY;
+    const el = document.querySelector(`.fnode[data-id="${n.id}"]`);
+    if (el) { el.style.left = n.x+'px'; el.style.top = n.y+'px'; }
+    renderConnections();
+  };
+  const up = () => { document.removeEventListener('mousemove',move); document.removeEventListener('mouseup',up); };
+  document.addEventListener('mousemove', move);
+  document.addEventListener('mouseup', up);
+}
+
+// ════════════════════════════════════════════
+//  DROP NEW NODE
+// ════════════════════════════════════════════
+function startDrag(type, e) { dragType = type; }
+
+function dropNode(e) {
+  if (!dragType) return;
+  const wrap  = document.getElementById('canvasWrap');
+  const rect  = wrap.getBoundingClientRect();
+  const x     = e.clientX - rect.left + wrap.scrollLeft - 110;
+  const y     = e.clientY - rect.top  + wrap.scrollTop  - 60;
+  const id    = dragType + '_' + Date.now().toString(36).slice(-4);
+
+  nodes.push({
+    id, type: dragType,
+    text: dragType==='speak'   ? 'Bot says something here…' :
+          dragType==='collect' ? 'What would you like to do?' : '',
+    next: '',
+    intents: dragType==='collect' ? [{match:'yes',next:''},{match:'no',next:''}] : undefined,
+    fallback: dragType==='collect' ? '' : undefined,
+    timeout: dragType==='collect' ? 6000 : undefined,
+    x, y,
+  });
+  dragType = null;
+  render();
+  selectNode(id);
+}
+
+// ════════════════════════════════════════════
+//  SELECT NODE → EDITOR
+// ════════════════════════════════════════════
+function selectNode(id) {
+  selected = id;
+  render();
+  const n = nodes.find(x => x.id === id);
+  if (!n) return;
+
+  document.getElementById('editorEmpty').style.display   = 'none';
+  document.getElementById('editorContent').classList.add('show');
+  document.getElementById('edNodeType').textContent = n.type.toUpperCase() + ' NODE';
+
+  document.getElementById('edId').value   = n.id;
+  document.getElementById('edText').value = n.text||'';
+  document.getElementById('edNext').value = n.next||'';
+  document.getElementById('edTimeout').value = n.timeout||6000;
+  document.getElementById('edFallback').value = n.fallback||'';
+
+  const isCollect = n.type==='collect';
+  const isEnd     = n.type==='end';
+  document.getElementById('edTextField').style.display    = isEnd ? 'none' : '';
+  document.getElementById('edNextField').style.display    = isCollect||isEnd ? 'none' : '';
+  document.getElementById('edTimeoutField').style.display = isCollect ? '' : 'none';
+  document.getElementById('edIntentsWrap').style.display  = isCollect ? '' : 'none';
+
+  renderIntentEditor(n);
+}
+
+function renderIntentEditor(n) {
+  const wrap = document.getElementById('edIntents');
+  wrap.innerHTML = '';
+  (n.intents||[]).forEach((intent, i) => {
+    const row = document.createElement('div');
+    row.style.marginBottom = '8px';
+    row.innerHTML = `
+      <div style="font-size:10px;font-weight:600;color:var(--ink3);margin-bottom:3px;">Intent ${i+1}</div>
+      <div style="display:grid;grid-template-columns:1fr auto;gap:4px;margin-bottom:3px;">
+        <input class="intent-kw" value="${intent.match||''}" placeholder="yes,haan,okay,sure…" oninput="updateIntent(${i},'match',this.value)"/>
+        <button class="rm-btn" onclick="removeIntent(${i})">✕</button>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px;">
+        <span style="font-size:10px;color:var(--ink3);white-space:nowrap;">→ go to</span>
+        <input class="intent-next" value="${intent.next||''}" placeholder="node-id" oninput="updateIntent(${i},'next',this.value)"/>
+      </div>`;
+    wrap.appendChild(row);
+  });
+}
+
+function updateIntent(i, key, val) {
+  const n = nodes.find(x => x.id===selected);
+  if (!n || !n.intents) return;
+  n.intents[i][key] = val;
+  renderConnections();
+}
+
+function addIntent() {
+  const n = nodes.find(x => x.id===selected);
+  if (!n) return;
+  if (!n.intents) n.intents = [];
+  n.intents.push({ match:'', next:'' });
+  renderIntentEditor(n);
+}
+
+function removeIntent(i) {
+  const n = nodes.find(x => x.id===selected);
+  if (!n) return;
+  n.intents.splice(i,1);
+  renderIntentEditor(n);
+  renderConnections();
+}
+
+function updateSelectedNode() {
+  const n = nodes.find(x => x.id===selected);
+  if (!n) return;
+  n.text     = document.getElementById('edText').value;
+  n.next     = document.getElementById('edNext').value;
+  n.timeout  = parseInt(document.getElementById('edTimeout').value)||6000;
+  n.fallback = document.getElementById('edFallback').value;
+
+  const newId = document.getElementById('edId').value;
+  if (newId && newId !== n.id) {
+    // Update all references to old id
+    const old = n.id;
+    nodes.forEach(x => {
+      if (x.next === old) x.next = newId;
+      if (x.fallback === old) x.fallback = newId;
+      (x.intents||[]).forEach(int => { if(int.next===old) int.next=newId; });
+    });
+    n.id = newId;
+    selected = newId;
+  }
+
+  render();
+}
+
+function deleteSelectedNode() {
+  nodes = nodes.filter(n => n.id !== selected);
+  selected = null;
+  document.getElementById('editorEmpty').style.display   = 'flex';
+  document.getElementById('editorContent').classList.remove('show');
+  render();
+}
+
+function copyToken(t) {
+  const ta = document.getElementById('edText');
+  const s = ta.selectionStart, e = ta.selectionEnd;
+  ta.value = ta.value.slice(0,s) + t + ta.value.slice(e);
+  ta.selectionStart = ta.selectionEnd = s + t.length;
+  ta.focus();
+  updateSelectedNode();
+}
+
+// ════════════════════════════════════════════
+//  BACKEND
+// ════════════════════════════════════════════
+function getBase() {
+  return (document.getElementById('backendUrl').value.trim()||'http://localhost:3001').replace(/\/$/,'');
+}
+
+async function testConn() {
+  const dot = document.getElementById('connDot');
+  const lbl = document.getElementById('connLbl');
+  dot.className = 'conn-dot';
+  try {
+    const r = await fetch(getBase()+'/health');
+    const d = await r.json();
+    if (d.status==='ok') {
+      dot.className='conn-dot ok';
+      lbl.textContent = `Connected · Sarvam:${d.env.sarvam?'✓':'✗'} Tanla:${d.env.tanla?'✓':'✗'}`;
+    }
+  } catch {
+    dot.className='conn-dot'; lbl.textContent='Cannot reach backend';
+  }
+}
+
+async function loadFromBackend() {
+  const id = document.getElementById('flowId').value;
+  try {
+    const r = await fetch(getBase()+'/api/voicebot/'+id);
+    if (!r.ok) throw new Error('not found');
+    const f = await r.json();
+    if (!f.nodes) throw new Error('invalid');
+    // assign positions if missing
+    f.nodes.forEach((n,i) => { n.x = n.x||60+i*300; n.y = n.y||80; });
+    nodes = f.nodes;
+    document.getElementById('flowId').value    = f.id;
+    document.getElementById('flowName').value  = f.name||'';
+    document.getElementById('flowLang').value  = f.lang||'hi-IN';
+    document.getElementById('flowSpeaker').value = f.speaker||'priya';
+    render();
+    logSys('Flow loaded from backend: '+id);
+  } catch(e) { logSys('Load failed: '+e.message, true); }
+}
+
+async function saveToBackend() {
+  const flow = buildFlowJson();
+  try {
+    const r = await fetch(getBase()+'/api/voicebot', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(flow),
+    });
+    const d = await r.json();
+    if (d.ok) logSys('✓ Flow saved to backend: '+flow.id);
+    else throw new Error(JSON.stringify(d));
+  } catch(e) { logSys('Save failed: '+e.message, true); }
+}
+
+function buildFlowJson() {
+  return {
+    id:      document.getElementById('flowId').value,
+    name:    document.getElementById('flowName').value,
+    lang:    document.getElementById('flowLang').value,
+    speaker: document.getElementById('flowSpeaker').value,
+    nodes: nodes.map(n => {
+      const out = { id:n.id, type:n.type, text:n.text||'', x:n.x, y:n.y };
+      if (n.next)     out.next     = n.next;
+      if (n.timeout)  out.timeout  = n.timeout;
+      if (n.fallback) out.fallback = n.fallback;
+      if (n.intents)  out.intents  = n.intents.map(i => ({
+        match: i.match.split(',').map(s=>s.trim()).filter(Boolean),
+        next: i.next,
+      }));
+      return out;
+    }),
+  };
+}
+
+async function previewNodeAudio() {
+  const n = nodes.find(x => x.id===selected);
+  if (!n || n.type==='end') return;
+  let vars = {};
+  try { vars = JSON.parse(document.getElementById('testVars').value); } catch{}
+  const text = n.text.replace(/\{(\w+)\}/g, (_,k) => vars[k]||`{${k}}`);
+  try {
+    const r = await fetch(getBase()+'/api/tts/preview', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({ text, speaker: document.getElementById('flowSpeaker').value, sampleRate:8000 }),
+    });
+    const d = await r.json();
+    if (!d.audioBase64) throw new Error('no audio');
+    const bin=atob(d.audioBase64), buf=new Uint8Array(bin.length);
+    for(let i=0;i<bin.length;i++) buf[i]=bin.charCodeAt(i);
+    const url = URL.createObjectURL(new Blob([buf],{type:'audio/wav'}));
+    const el  = document.getElementById('nodeAudio');
+    el.src = url; el.style.display='block'; el.play();
+  } catch(e) { logSys('Preview failed: '+e.message, true); }
+}
+
+// ════════════════════════════════════════════
+//  FLOW SIMULATOR
+// ════════════════════════════════════════════
+function getSimVars() {
+  try { return JSON.parse(document.getElementById('testVars').value); }
+  catch { return {}; }
+}
+
+function interp(text, vars) {
+  return (text||'').replace(/\{(\w+)\}/g, (_,k) => vars[k]||`{${k}}`);
+}
+
+class SimEngine {
+  constructor(nodes, vars) {
+    this.nodeMap = Object.fromEntries(nodes.map(n=>[n.id,n]));
+    this.current = nodes[0]?.id;
+    this.vars    = vars;
+    this.done    = false;
+  }
+
+  currentNode() { return this.nodeMap[this.current]; }
+
+  getText() {
+    const n = this.currentNode();
+    return n ? interp(n.text, this.vars) : null;
+  }
+
+  advance() {
+    const n = this.currentNode();
+    if (!n || n.type==='end') { this.done=true; return null; }
+    if (n.type==='speak') {
+      this.current = n.next||'end';
+      return this.currentNode();
+    }
+    return n; // collect — wait for input
+  }
+
+  processInput(text) {
+    const n = this.currentNode();
+    if (!n || n.type!=='collect') return null;
+    const lower = text.toLowerCase();
+    for (const intent of (n.intents||[])) {
+      const kws = typeof intent.match==='string'
+        ? intent.match.split(',').map(s=>s.trim())
+        : intent.match;
+      if (kws.some(kw => lower.includes(kw.toLowerCase()))) {
+        this.current = intent.next||'end';
+        return this.currentNode();
+      }
+    }
+    // fallback
+    this.current = n.fallback||'end';
+    return this.currentNode();
+  }
+}
+
+let simEng = null;
+
+function startSim() {
+  const vars = getSimVars();
+  simEng = new SimEngine(nodes, vars);
+  clearLog();
+  logSys('Simulation started');
+  runSimStep();
+}
+
+function resetSim() {
+  simEng = null;
+  clearLog();
+  logSys('Simulator reset. Click "Start simulation" to begin.');
+  document.getElementById('simStatus').textContent = 'Not started';
+}
+
+async function runSimStep() {
+  if (!simEng) return;
+  const n = simEng.currentNode();
+  if (!n) { logSys('✓ Flow complete'); document.getElementById('simStatus').textContent='Complete'; return; }
+
+  if (n.type==='end') {
+    logSys('📵 Call ended');
+    document.getElementById('simStatus').textContent='Ended';
+    return;
+  }
+
+  if (n.type==='speak') {
+    const text = simEng.getText();
+    logBot(text);
+    document.getElementById('simStatus').textContent = 'Bot speaking…';
+
+    // Optional: play audio via backend
+    if (document.getElementById('backendUrl').value.trim()) {
+      try {
+        const r = await fetch(getBase()+'/api/tts/preview', {
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({ text, speaker: document.getElementById('flowSpeaker').value, sampleRate:8000 }),
+        });
+        const d = await r.json();
+        if (d.audioBase64) {
+          const bin=atob(d.audioBase64), buf=new Uint8Array(bin.length);
+          for(let i=0;i<bin.length;i++) buf[i]=bin.charCodeAt(i);
+          const audio = new Audio(URL.createObjectURL(new Blob([buf],{type:'audio/wav'})));
+          audio.play().catch(()=>{});
+        }
+      } catch(_) {}
+    }
+
+    // Auto-advance speak nodes
+    setTimeout(() => {
+      simEng.advance();
+      runSimStep();
+    }, 1200);
+
+  } else if (n.type==='collect') {
+    const text = simEng.getText();
+    logBot(text);
+    logSys(`⏳ Waiting for input (timeout: ${(n.timeout||5000)/1000}s)…`);
+    document.getElementById('simStatus').textContent = 'Waiting for your input…';
+    document.getElementById('simInput').focus();
+  }
+}
+
+function sendSimInput() {
+  if (!simEng) return;
+  const input = document.getElementById('simInput').value.trim();
+  if (!input) return;
+  document.getElementById('simInput').value = '';
+  logUser(input);
+
+  const n = simEng.currentNode();
+  if (n?.type==='collect') {
+    simEng.processInput(input);
+    setTimeout(() => runSimStep(), 300);
+  }
+}
+
+// ════════════════════════════════════════════
+//  LOG HELPERS
+// ════════════════════════════════════════════
+function logBot(text)  { addLog('tl-bot',  '🤖 Bot: ' + text); }
+function logUser(text) { addLog('tl-user', '👤 You: ' + text); }
+function logSys(text, err=false) { addLog(err?'tl-err':'tl-sys', text); }
+function clearLog() {
+  document.getElementById('testLog').innerHTML = '';
+}
+function addLog(cls, text) {
+  const log = document.getElementById('testLog');
+  const div = document.createElement('div');
+  div.className = 'tl-entry ' + cls;
+  div.textContent = text;
+  log.appendChild(div);
+  log.scrollTop = log.scrollHeight;
+}
+// ════════════════════════════════════════════
+//  LAUNCH CAMPAIGN MODAL
+// ════════════════════════════════════════════
+function showLaunchModal() {
+  const el = document.getElementById('launchModal');
+  if (el) { el.style.display = 'flex'; return; }
+
+  const modal = document.createElement('div');
+  modal.id = 'launchModal';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;z-index:999;';
+  modal.innerHTML = `
+    <div style="background:var(--surface,#fff);border-radius:14px;padding:24px;max-width:520px;width:90%;max-height:90vh;overflow-y:auto;box-shadow:0 12px 48px rgba(0,0,0,.2);">
+      <div style="font-size:14px;font-weight:700;margin-bottom:4px;">📞 Launch interactive campaign</div>
+      <div style="font-size:12px;color:var(--ink2,#666);margin-bottom:16px;">Each contact gets a personalised live bot call driven by the <strong>${document.getElementById('flowId').value}</strong> flow.</div>
+
+      <div style="font-size:11px;font-weight:700;color:var(--ink3,#aaa);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;">Contacts CSV</div>
+      <textarea id="launchCsv" rows="6" style="width:100%;padding:8px 10px;border:1.5px solid var(--bd,#e4e1d9);border-radius:8px;font-size:12px;font-family:monospace;resize:vertical;box-sizing:border-box;outline:none;">phone_number,customer_name,store_name,pickup_timings
++919876543210,Riya Sharma,Lajpat Nagar Store,10am to 6pm
++919812345678,Amit Verma,Saket Store,9am to 5pm</textarea>
+
+      <div style="margin-top:12px;font-size:11px;font-weight:700;color:var(--ink3,#aaa);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">Mode</div>
+      <div style="display:flex;gap:8px;margin-bottom:16px;">
+        <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;">
+          <input type="radio" name="launchMode" value="twilio" checked/> 🤖 Interactive bot (Twilio)
+        </label>
+        <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;">
+          <input type="radio" name="launchMode" value="tanla"/> 📢 Voice broadcast (Tanla)
+        </label>
+      </div>
+
+      <div id="launchResult" style="display:none;background:var(--grn-l,#E1F5EE);border:1px solid #9FE1CB;border-radius:8px;padding:10px 12px;font-size:12px;color:var(--grn,#0F6E56);margin-bottom:12px;font-family:monospace;white-space:pre-wrap;max-height:160px;overflow-y:auto;"></div>
+
+      <div style="display:flex;gap:8px;">
+        <button onclick="launchCampaign()" style="flex:1;padding:11px;border-radius:8px;background:var(--acc,#5B3FE8);color:#fff;border:none;font-size:13px;font-weight:700;cursor:pointer;">Launch</button>
+        <button onclick="document.getElementById('launchModal').style.display='none'" style="padding:11px 18px;border-radius:8px;border:1.5px solid var(--bd,#e4e1d9);background:transparent;font-size:13px;cursor:pointer;color:var(--ink2,#666);">Close</button>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+}
+
+function parseModalCsv(text) {
+  const lines = text.trim().split(/\r?\n/).filter(Boolean);
+  if (lines.length < 2) return [];
+  const headers = lines[0].split(',').map(h => h.trim());
+  return lines.slice(1).map(line => {
+    const vals = line.split(',').map(v => v.trim());
+    const row  = {};
+    headers.forEach((h, i) => { row[h] = vals[i] || ''; });
+    // Normalise phone
+    let ph = (row.phone_number || '').replace(/[\s\-\.]/g, '');
+    if (ph && !ph.startsWith('+')) ph = '+' + ph;
+    row.phone_number = ph;
+    return row;
+  });
+}
+
+async function launchCampaign() {
+  const csv      = document.getElementById('launchCsv').value;
+  const contacts = parseModalCsv(csv);
+  const mode     = document.querySelector('input[name="launchMode"]:checked').value;
+  const flowId   = document.getElementById('flowId').value;
+  const base     = getBase();
+  const res_el   = document.getElementById('launchResult');
+
+  if (!contacts.length) { res_el.style.display='block'; res_el.textContent='No valid contacts found in CSV.'; return; }
+
+  res_el.style.display = 'block';
+  res_el.style.background = 'var(--amber-l,#FFF4E0)';
+  res_el.style.color = 'var(--amber,#854F0B)';
+  res_el.textContent = `Launching ${contacts.length} calls via ${mode === 'twilio' ? 'Twilio (interactive bot)' : 'Tanla (broadcast)'}…`;
+
+  // First save the flow
+  await saveToBackend();
+
+  const endpoint = mode === 'twilio'
+    ? base + '/api/twilio/campaign'
+    : base + '/api/voicebot/' + flowId + '/campaign';
+
+  try {
+    const r = await fetch(endpoint, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ contacts, flowId }),
+    });
+    const d = await r.json();
+    res_el.style.background = 'var(--grn-l,#E1F5EE)';
+    res_el.style.color      = 'var(--grn,#0F6E56)';
+    res_el.textContent = JSON.stringify(d, null, 2);
+  } catch(e) {
+    res_el.style.background = 'var(--red-l,#FEE2E2)';
+    res_el.style.color      = 'var(--red,#B91C1C)';
+    res_el.textContent = 'Error: ' + e.message;
+  }
+}
+</script>
+</body>
+</html>
