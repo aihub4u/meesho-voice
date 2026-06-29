@@ -29,6 +29,14 @@ FRONTEND_URL=https://aihub4u.github.io
 
 # ── Server ────────────────────────────────────────────────────────────────────
 PORT=3001
+
+# ── Exotel (Interactive voice bot — Indian outbound calls) ────────────────────
+# Sign up at exotel.com → API Credentials page
+EXOTEL_ACCOUNT_SID=your_exotel_account_sid
+EXOTEL_API_KEY=your_exotel_api_key
+EXOTEL_API_TOKEN=your_exotel_api_token
+EXOTEL_PHONE_NUMBER=08047285770
+EXOTEL_SUBDOMAIN=api.in.exotel.com
 `,
   "backend/package.json": `{
   "name": "meesho-voice-backend",
@@ -343,12 +351,12 @@ import campaignRouter from "./routes/campaign.js";
 import ttsRouter      from "./routes/tts.js";
 import voicebotRouter, { attachWebSocket, getFlows } from "./voicebot/routes.js";
 import twilioRouter,   { attachTwilioWebSocket, initTwilio } from "./voicebot/twilioRoutes.js";
+import exotelRouter,   { attachExotelWebSocket, initExotel } from "./voicebot/exotelRoutes.js";
 
 const app    = express();
 const server = http.createServer(app);
 const PORT   = process.env.PORT || 3001;
 
-// ── CORS ───────────────────────────────────────────────────────────────────────
 const allowed = [
   process.env.FRONTEND_URL,
   "http://localhost:5173",
@@ -357,60 +365,58 @@ const allowed = [
 
 app.use(cors({
   origin: (origin, cb) => {
-    // Allow: no origin (curl/Postman), null origin (local file://), listed origins, github.io
-    if (!origin || origin === 'null' || allowed.includes(origin)) return cb(null, true);
+    if (!origin || origin === "null" || allowed.includes(origin)) return cb(null, true);
     if (/\\.github\\.io$/.test(origin)) return cb(null, true);
     cb(new Error(\`CORS blocked: \${origin}\`));
   },
   credentials: true,
 }));
 
-// Twilio posts form-encoded webhooks — must parse before json middleware
-app.use("/api/twilio/status", express.urlencoded({ extended: false }));
-app.use("/api/twilio/twiml",  express.urlencoded({ extended: false }));
+app.use("/api/twilio/status",  express.urlencoded({ extended: false }));
+app.use("/api/twilio/twiml",   express.urlencoded({ extended: false }));
+app.use("/api/exotel/status",  express.urlencoded({ extended: false }));
 app.use(express.json({ limit: "10mb" }));
 app.use(rateLimit({ windowMs: 15*60*1000, max: 300, message: { error: "Rate limited" } }));
 
-// ── Routes ─────────────────────────────────────────────────────────────────────
 app.use("/api/upload",    uploadRouter);
 app.use("/api/campaign",  campaignRouter);
 app.use("/api/tts",       ttsRouter);
 app.use("/api/voicebot",  voicebotRouter);
 app.use("/api/twilio",    twilioRouter);
+app.use("/api/exotel",    exotelRouter);
 
-// ── Health ─────────────────────────────────────────────────────────────────────
 app.get("/health", (_, res) => res.json({
-  status:    "ok",
+  status: "ok",
   timestamp: new Date().toISOString(),
   env: {
     sarvam: !!process.env.SARVAM_API_KEY,
     tanla:  !!(process.env.TANLA_ACCESS_KEY && process.env.TANLA_DID),
     twilio: !!(process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN),
+    exotel: !!(process.env.EXOTEL_ACCOUNT_SID && process.env.EXOTEL_API_KEY),
   },
 }));
 
-// ── Error handler ──────────────────────────────────────────────────────────────
 app.use((err, _req, res, _next) => {
   console.error("[ERROR]", err.message);
   res.status(err.status || 500).json({ error: err.message || "Internal server error" });
 });
 
-// ── Start ──────────────────────────────────────────────────────────────────────
-// Share the flow store between voicebot and twilio routers
 const flows = getFlows();
 initTwilio(flows);
-
-// Attach both WebSocket servers to the shared HTTP server
+initExotel(flows);
 attachWebSocket(server);
 attachTwilioWebSocket(server);
+attachExotelWebSocket(server);
 
 server.listen(PORT, () => {
-  console.log(\`\\n🚀 Meesho Voice Platform  →  http://localhost:\${PORT}\`);
+  console.log(\`\\n🚀 Meesho Voice Platform → http://localhost:\${PORT}\`);
   console.log(\`   Sarvam  : \${process.env.SARVAM_API_KEY       ? "✓" : "✗ missing"}\`);
   console.log(\`   Tanla   : \${process.env.TANLA_ACCESS_KEY      ? "✓" : "✗ missing"}\`);
   console.log(\`   Twilio  : \${process.env.TWILIO_ACCOUNT_SID    ? "✓" : "✗ missing"}\`);
+  console.log(\`   Exotel  : \${process.env.EXOTEL_ACCOUNT_SID    ? "✓" : "✗ missing"}\`);
   console.log(\`   WS bot  : ws://localhost:\${PORT}/ws/voicebot\`);
   console.log(\`   WS TW   : ws://localhost:\${PORT}/ws/twilio\`);
+  console.log(\`   WS EX   : ws://localhost:\${PORT}/ws/exotel\`);
   console.log(\`   Frontend: \${process.env.FRONTEND_URL || "http://localhost:5173"}\\n\`);
 });
 `,
@@ -602,6 +608,496 @@ export function isWithinCallWindow() {
   const startMin = startH * 60 + startM;
   const endMin   = endH   * 60 + endM;
   return nowMins >= startMin && nowMins <= endMin;
+}
+`,
+  "backend/src/voicebot/exotelRoutes.js": `import express            from "express";
+import fetch              from "node-fetch";
+import FormData           from "form-data";
+import { WebSocketServer } from "ws";
+import { ExotelSession }  from "./exotelSession.js";
+
+const router   = express.Router();
+const sessions = new Map();  // callSid → ExotelSession
+
+let flows = null;
+export function initExotel(flowStore) { flows = flowStore; }
+
+// ── Exotel API helper ────────────────────────────────────────────────────────
+function getExotelConfig() {
+  const accountSid = process.env.EXOTEL_ACCOUNT_SID;
+  const apiKey     = process.env.EXOTEL_API_KEY;
+  const apiToken   = process.env.EXOTEL_API_TOKEN;
+  const subdomain  = process.env.EXOTEL_SUBDOMAIN || "api.in.exotel.com";
+
+  if (!accountSid || !apiKey || !apiToken) {
+    throw new Error("EXOTEL_ACCOUNT_SID / EXOTEL_API_KEY / EXOTEL_API_TOKEN not set");
+  }
+  return { accountSid, apiKey, apiToken, subdomain };
+}
+
+// ── POST /api/exotel/call ─────────────────────────────────────────────────────
+// Trigger an outbound call. Body: { to, flowId, variables }
+router.post("/call", async (req, res, next) => {
+  try {
+    const { to, flowId = "meesho-pickup", variables = {} } = req.body;
+    if (!to) return res.status(400).json({ error: "to (phone number) required" });
+
+    const flow = flows?.get(flowId);
+    if (!flow) return res.status(404).json({ error: \`Flow "\${flowId}" not found\` });
+
+    const { accountSid, apiKey, apiToken, subdomain } = getExotelConfig();
+    const backendUrl = process.env.BACKEND_URL || \`https://\${req.headers.host}\`;
+    const exophone   = process.env.EXOTEL_PHONE_NUMBER;
+
+    if (!exophone) return res.status(400).json({ error: "EXOTEL_PHONE_NUMBER not set" });
+
+    // Encode variables for passing to WebSocket
+    const varsB64  = Buffer.from(JSON.stringify({ ...variables, flowId })).toString("base64");
+    const streamUrl = \`\${backendUrl.replace(/^https?/, "wss")}/ws/exotel?vars=\${encodeURIComponent(varsB64)}\`;
+
+    // Exotel outbound call with AgentStream (bidirectional WebSocket)
+    const form = new FormData();
+    form.append("From",           to);
+    form.append("CallerId",       exophone);
+    form.append("Url",            \`\${backendUrl}/api/exotel/applet?flowId=\${flowId}&vars=\${encodeURIComponent(varsB64)}\`);
+    form.append("StatusCallback", \`\${backendUrl}/api/exotel/status\`);
+    form.append("StatusCallbackEvents[0]", "terminal");
+
+    const url = \`https://\${apiKey}:\${apiToken}@\${subdomain}/v1/Accounts/\${accountSid}/Calls/connect\`;
+
+    console.log(\`[Exotel] Outbound call | to=\${to} | flow=\${flowId}\`);
+
+    const resp = await fetch(url, {
+      method:  "POST",
+      body:    form,
+      headers: form.getHeaders(),
+    });
+
+    const data = await resp.json().catch(() => ({}));
+
+    if (!resp.ok) {
+      throw new Error(\`Exotel \${resp.status}: \${JSON.stringify(data)}\`);
+    }
+
+    const callSid = data.Call?.Sid || data.call?.sid;
+    console.log(\`[Exotel] ✓ Call initiated | sid=\${callSid}\`);
+    res.json({ callSid, status: data.Call?.Status || "queued", to, flowId });
+
+  } catch (e) { next(e); }
+});
+
+// ── GET /api/exotel/trigger ───────────────────────────────────────────────────
+// Browser-friendly GET endpoint for testing from local HTML files
+router.get("/trigger", async (req, res, next) => {
+  try {
+    const { to, flowId = "meesho-pickup", customer_name, store_name, pickup_timings } = req.query;
+    if (!to) return res.status(400).json({ error: "to required" });
+
+    const flow = flows?.get(flowId);
+    if (!flow) return res.status(404).json({ error: \`Flow "\${flowId}" not found\` });
+
+    const { accountSid, apiKey, apiToken, subdomain } = getExotelConfig();
+    const backendUrl = process.env.BACKEND_URL || \`https://\${req.headers.host}\`;
+    const exophone   = process.env.EXOTEL_PHONE_NUMBER;
+
+    if (!exophone) return res.status(400).json({ error: "EXOTEL_PHONE_NUMBER not set" });
+
+    const variables = { customer_name, store_name, pickup_timings, flowId };
+    const varsB64   = Buffer.from(JSON.stringify(variables)).toString("base64");
+
+    const form = new FormData();
+    form.append("From",           to);
+    form.append("CallerId",       exophone);
+    form.append("Url",            \`\${backendUrl}/api/exotel/applet?flowId=\${flowId}&vars=\${encodeURIComponent(varsB64)}\`);
+    form.append("StatusCallback", \`\${backendUrl}/api/exotel/status\`);
+    form.append("StatusCallbackEvents[0]", "terminal");
+
+    const url = \`https://\${apiKey}:\${apiToken}@\${subdomain}/v1/Accounts/\${accountSid}/Calls/connect\`;
+
+    const resp = await fetch(url, {
+      method:  "POST",
+      body:    form,
+      headers: form.getHeaders(),
+    });
+
+    const data = await resp.json().catch(() => ({}));
+
+    res.setHeader("Access-Control-Allow-Origin", "*");
+
+    if (!resp.ok) throw new Error(\`Exotel \${resp.status}: \${JSON.stringify(data)}\`);
+
+    res.json({ callSid: data.Call?.Sid, status: "queued", to, flowId });
+  } catch (e) { next(e); }
+});
+
+// ── GET /api/exotel/applet ────────────────────────────────────────────────────
+// Exotel fetches this URL when the call connects.
+// Returns ExoML that opens a bidirectional stream to our WebSocket bot.
+router.get("/applet", (req, res) => {
+  const { flowId = "meesho-pickup", vars = "" } = req.query;
+  const backendUrl = process.env.BACKEND_URL || \`https://\${req.headers.host}\`;
+  const wsUrl      = \`\${backendUrl.replace(/^https?/, "wss")}/ws/exotel?flowId=\${encodeURIComponent(flowId)}&vars=\${encodeURIComponent(vars)}\`;
+
+  // ExoML — tells Exotel to open a bidirectional WebSocket stream to our bot
+  const exoml = \`<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+  <Connect>
+    <Stream url="\${wsUrl}" bidirectional="true" audioTrack="inbound_track">
+      <Parameter name="flowId" value="\${flowId}"/>
+      <Parameter name="vars"   value="\${vars}"/>
+    </Stream>
+  </Connect>
+</Response>\`;
+
+  res.type("text/xml").send(exoml);
+  console.log(\`[Exotel] Applet served | flow=\${flowId} | ws=\${wsUrl}\`);
+});
+
+// ── POST /api/exotel/status ───────────────────────────────────────────────────
+// Exotel posts call status updates here
+router.post("/status", express.urlencoded({ extended: false }), (req, res) => {
+  const { CallSid, Status, Duration } = req.body;
+  console.log(\`[Exotel] Status | sid=\${CallSid} | status=\${Status} | duration=\${Duration}s\`);
+  if (["completed","failed","busy","no-answer"].includes(Status?.toLowerCase())) {
+    sessions.delete(CallSid);
+  }
+  res.sendStatus(200);
+});
+
+// ── GET /api/exotel/session/:callSid ─────────────────────────────────────────
+router.get("/session/:callSid", (req, res) => {
+  const session = sessions.get(req.params.callSid);
+  if (!session) return res.status(404).json({ error: "Session not found" });
+  res.json({ logs: session.getLogs(), history: session.getHistory() });
+});
+
+// ── WebSocket server at /ws/exotel ────────────────────────────────────────────
+export function attachExotelWebSocket(server) {
+  const wss = new WebSocketServer({ server, path: "/ws/exotel" });
+
+  wss.on("connection", (ws, req) => {
+    console.log("[Exotel WS] New stream connection");
+
+    // Parse vars from URL query string
+    const urlParams = new URL(req.url, "http://localhost");
+    const flowId    = urlParams.searchParams.get("flowId") || "meesho-pickup";
+    const varsStr   = urlParams.searchParams.get("vars") || "";
+
+    let variables = {};
+    try {
+      variables = varsStr ? JSON.parse(Buffer.from(varsStr, "base64").toString()) : {};
+    } catch (_) {}
+
+    const resolvedFlowId = variables.flowId || flowId;
+    const flow = flows?.get(resolvedFlowId);
+
+    if (!flow) {
+      console.error(\`[Exotel WS] Unknown flow: \${resolvedFlowId}\`);
+      ws.close();
+      return;
+    }
+
+    console.log(\`[Exotel WS] Session | flow=\${resolvedFlowId} | vars=\${JSON.stringify(variables)}\`);
+
+    const session = new ExotelSession(ws, flow, variables, {
+      speaker:  flow.speaker || "priya",
+      langCode: flow.lang    || "hi-IN",
+    });
+
+    // Store session — callSid comes in the "start" event
+    ws.on("message", (raw) => {
+      try {
+        const msg = JSON.parse(raw.toString());
+        if (msg.event === "start" && msg.start?.call_sid) {
+          sessions.set(msg.start.call_sid, session);
+        }
+      } catch (_) {}
+    });
+
+    ws.on("close",  () => console.log("[Exotel WS] Connection closed"));
+    ws.on("error",  e  => console.error("[Exotel WS] Error:", e.message));
+  });
+
+  console.log("[Exotel WS] Media stream server ready at /ws/exotel");
+  return wss;
+}
+
+export default router;
+`,
+  "backend/src/voicebot/exotelSession.js": `import { generateSpeech }  from "../services/sarvam.js";
+import { transcribeAudio } from "./stt.js";
+import { VAD }             from "./vad.js";
+import { FlowEngine }      from "./flowEngine.js";
+
+/**
+ * ExotelSession
+ *
+ * Handles one live Exotel AgentStream WebSocket connection.
+ *
+ * Exotel protocol (IN from Exotel):
+ *   { event:"connected", protocol:"Call", version:"1.0.0" }
+ *   { event:"start",  start:{ call_sid, stream_sid, account_sid, custom_parameters:{} } }
+ *   { event:"media",  media:{ chunk:N, timestamp, payload:"<base64 PCM16 8kHz>" } }
+ *   { event:"stop",   stop:{ call_sid, stream_sid } }
+ *   { event:"mark",   mark:{ name } }
+ *
+ * OUT to Exotel:
+ *   { event:"media",  media:{ payload:"<base64 PCM16>" } }   ← play audio
+ *   { event:"mark",   mark:{ name:"bot_done" } }              ← track playback end
+ *   { event:"clear" }                                          ← interrupt / stop audio
+ *
+ * Audio format: base64-encoded LINEAR PCM, 8kHz, 16-bit, mono
+ * Chunk size: must be multiple of 320 bytes (100ms of audio at 8kHz 16-bit)
+ */
+export class ExotelSession {
+  constructor(ws, flow, variables, options = {}) {
+    this.ws        = ws;
+    this.flow      = new FlowEngine(flow, variables);
+    this.vad       = new VAD({
+      speechThreshold: options.speechThreshold ?? 400,
+      silenceFrames:   options.silenceFrames   ?? 15,
+      minSpeechFrames: options.minSpeechFrames ?? 3,
+    });
+    this.streamSid  = null;
+    this.callSid    = null;
+    this.speaker    = options.speaker    || "priya";
+    this.sampleRate = 8000;
+    this.langCode   = options.langCode   || "hi-IN";
+    this.stopped    = false;
+    this._timer     = null;
+    this._speaking  = false;
+    this._logs      = [];
+    this._history   = [];
+
+    this._wireVAD();
+    this._wireWS();
+  }
+
+  // ── WebSocket events ────────────────────────────────────────────────────────
+  _wireWS() {
+    this.ws.on("message", async (raw) => {
+      try {
+        const msg = JSON.parse(raw.toString());
+
+        switch (msg.event) {
+          case "connected":
+            this.log("info", \`Exotel WS connected | protocol=\${msg.protocol}\`);
+            break;
+
+          case "start":
+            this.streamSid = msg.start?.stream_sid;
+            this.callSid   = msg.start?.call_sid;
+            const params   = msg.start?.custom_parameters || {};
+            this.log("info", \`Stream started | sid=\${this.streamSid} | call=\${this.callSid}\`);
+            await this._startFlow();
+            break;
+
+          case "media":
+            if (this.stopped) break;
+            // Exotel sends base64 PCM16 directly (no mulaw conversion needed)
+            const pcm = Buffer.from(msg.media.payload, "base64");
+            this.vad.processChunk(pcm);
+            break;
+
+          case "mark":
+            if (msg.mark?.name === "bot_done") {
+              this.log("info", "Bot audio finished → listening");
+              this._speaking = false;
+              this.vad.mode  = "listening";
+              this._startCollectTimer();
+            }
+            break;
+
+          case "stop":
+            this.log("info", "Stream stopped by Exotel");
+            this._cleanup();
+            break;
+        }
+      } catch (e) {
+        this.log("error", \`WS message error: \${e.message}\`);
+      }
+    });
+
+    this.ws.on("close", () => this._cleanup());
+    this.ws.on("error", e => this.log("error", \`WS error: \${e.message}\`));
+  }
+
+  // ── VAD callbacks ──────────────────────────────────────────────────────────
+  _wireVAD() {
+    this.vad.onInterrupt = () => {
+      this.log("info", "🛑 INTERRUPT — customer spoke during bot turn");
+      this._send({ event: "clear" });
+      this._speaking = false;
+      this.vad.mode  = "listening";
+      clearTimeout(this._timer);
+      this._startCollectTimer();
+    };
+
+    this.vad.onSpeechStart = () => {
+      this.log("info", "🎤 Speech detected");
+      clearTimeout(this._timer);
+    };
+
+    this.vad.onSpeechEnd = async (pcmBuffer) => {
+      this.log("info", \`🎤 Utterance complete (\${(pcmBuffer.length/1024).toFixed(0)}KB)\`);
+      clearTimeout(this._timer);
+      this.vad.mode = "idle";
+      await this._processUtterance(pcmBuffer);
+    };
+  }
+
+  // ── Start flow ─────────────────────────────────────────────────────────────
+  async _startFlow() {
+    const text = this.flow.getCurrentText();
+    if (!text) { this._endCall(); return; }
+    this.log("info", \`Bot: "\${text}"\`);
+    await this._speak(text);
+  }
+
+  // ── TTS → stream to Exotel ─────────────────────────────────────────────────
+  async _speak(text) {
+    if (this.stopped) return;
+    this._speaking = true;
+    this.vad.mode  = "bot_speaking";
+
+    try {
+      const wavBuf = await generateSpeech({
+        text,
+        speaker:    this.speaker,
+        sampleRate: this.sampleRate,
+      });
+
+      // Strip WAV header (44 bytes) to get raw PCM
+      const pcm = wavBuf.slice(0, 4).toString() === "RIFF" ? wavBuf.slice(44) : wavBuf;
+
+      // Send in 320-byte chunks (100ms at 8kHz 16-bit mono)
+      // Exotel requires chunk size to be a multiple of 320
+      const CHUNK = 3200; // 1 second chunks for efficiency
+      for (let i = 0; i < pcm.length; i += CHUNK) {
+        if (this.stopped || !this._speaking) break;
+        const chunk = pcm.slice(i, i + CHUNK);
+        // Pad last chunk to multiple of 320 if needed
+        const padded = chunk.length % 320 === 0
+          ? chunk
+          : Buffer.concat([chunk, Buffer.alloc(320 - (chunk.length % 320))]);
+
+        this._send({
+          event: "media",
+          media: { payload: padded.toString("base64") },
+        });
+      }
+
+      // Send mark event — Exotel echoes it back when audio finishes playing
+      this._send({ event: "mark", mark: { name: "bot_done" } });
+
+      // Advance flow
+      const next = this.flow.onSpeakComplete();
+      await this._handleNext(next);
+
+    } catch (e) {
+      this.log("error", \`TTS error: \${e.message}\`);
+      this._speaking = false;
+    }
+  }
+
+  // ── Collect timeout ────────────────────────────────────────────────────────
+  _startCollectTimer() {
+    clearTimeout(this._timer);
+    const ms = this.flow.getTimeout();
+    this._timer = setTimeout(async () => {
+      const audio = this.vad.flush();
+      if (audio && audio.length > 3200) {
+        await this._processUtterance(audio);
+      } else {
+        this.log("info", \`⏰ Silence timeout after \${ms}ms\`);
+        const next = this.flow.processInput("");
+        await this._handleNext(next);
+      }
+    }, ms);
+  }
+
+  // ── STT → FlowEngine ──────────────────────────────────────────────────────
+  async _processUtterance(pcmBuffer) {
+    try {
+      this.log("info", "Sending to Sarvam STT…");
+      const wavBuffer  = pcmToWav(pcmBuffer, this.sampleRate);
+      const transcript = await transcribeAudio(wavBuffer, this.langCode);
+      this.log("info", \`STT: "\${transcript}"\`);
+      this._history.push({ speaker: "user", text: transcript });
+
+      const next = this.flow.processInput(transcript);
+      await this._handleNext(next);
+    } catch (e) {
+      this.log("error", \`STT error: \${e.message}\`);
+      const next = this.flow.processInput("");
+      await this._handleNext(next);
+    }
+  }
+
+  // ── Handle next flow step ──────────────────────────────────────────────────
+  async _handleNext(result) {
+    if (!result || this.stopped) return;
+    if (result.action === "end") {
+      this.log("info", "Flow complete");
+      setTimeout(() => this._endCall(), 2000);
+      return;
+    }
+    if (result.text) {
+      this.log("info", \`Bot: "\${result.text}"\`);
+      this._history.push({ speaker: "bot", text: result.text });
+      await this._speak(result.text);
+    }
+  }
+
+  // ── Helpers ────────────────────────────────────────────────────────────────
+  _endCall() {
+    this.log("info", "Ending call");
+    this._cleanup();
+    try { this.ws.close(); } catch (_) {}
+  }
+
+  _cleanup() {
+    if (this.stopped) return;
+    this.stopped = true;
+    clearTimeout(this._timer);
+    this.vad.mode = "idle";
+  }
+
+  _send(obj) {
+    try {
+      if (this.ws.readyState === 1) this.ws.send(JSON.stringify(obj));
+    } catch (_) {}
+  }
+
+  log(type, msg) {
+    const e = { type, msg, ts: new Date().toISOString() };
+    this._logs.push(e);
+    console.log(\`[Exotel][\${type.toUpperCase()}] \${msg}\`);
+  }
+
+  getLogs()    { return this._logs; }
+  getHistory() { return this._history; }
+}
+
+// ── Wrap raw PCM16 in WAV header (for Sarvam STT) ──────────────────────────
+function pcmToWav(pcm, sampleRate = 8000, channels = 1, bitDepth = 16) {
+  const byteRate   = sampleRate * channels * (bitDepth / 8);
+  const blockAlign = channels * (bitDepth / 8);
+  const hdr        = Buffer.allocUnsafe(44);
+  hdr.write("RIFF",     0,  "ascii");
+  hdr.writeUInt32LE(36 + pcm.length, 4);
+  hdr.write("WAVE",     8,  "ascii");
+  hdr.write("fmt ",     12, "ascii");
+  hdr.writeUInt32LE(16, 16);
+  hdr.writeUInt16LE(1,  20);
+  hdr.writeUInt16LE(channels, 22);
+  hdr.writeUInt32LE(sampleRate, 24);
+  hdr.writeUInt32LE(byteRate,   28);
+  hdr.writeUInt16LE(blockAlign, 32);
+  hdr.writeUInt16LE(bitDepth,   34);
+  hdr.write("data",     36, "ascii");
+  hdr.writeUInt32LE(pcm.length, 40);
+  return Buffer.concat([hdr, pcm]);
 }
 `,
   "backend/src/voicebot/flowEngine.js": `/**
@@ -1508,22 +2004,27 @@ router.post("/campaign", async (req, res, next) => {
 router.get("/twiml", (req, res) => {
   const { flowId = "meesho-pickup", vars = "" } = req.query;
   const backendUrl = process.env.BACKEND_URL || \`https://\${req.headers.host}\`;
-  // WebSocket URL — must be wss:// in production
   const wsUrl = backendUrl.replace(/^https?/, "wss") + "/ws/twilio";
 
-  // TwiML response — tells Twilio to stream audio to our WebSocket
+  // If no vars passed (e.g. inbound call), use defaults from flow
+  const defaultVars = vars || Buffer.from(JSON.stringify({
+    customer_name:  "Customer",
+    store_name:     "Meesho Store",
+    pickup_timings: "10am to 6pm",
+  })).toString("base64");
+
   const twiml = \`<?xml version="1.0" encoding="UTF-8"?>
 <Response>
   <Connect>
     <Stream url="\${wsUrl}">
       <Parameter name="flowId" value="\${flowId}"/>
-      <Parameter name="vars"   value="\${vars}"/>
+      <Parameter name="vars"   value="\${defaultVars}"/>
     </Stream>
   </Connect>
 </Response>\`;
 
   res.type("text/xml").send(twiml);
-  console.log(\`[Twilio] TwiML served | flow=\${flowId} | wsUrl=\${wsUrl}\`);
+  console.log(\`[Twilio] TwiML served | flow=\${flowId} | wsUrl=\${wsUrl} | inbound=\${!vars}\`);
 });
 
 // ── POST /api/twilio/status ───────────────────────────────────────────────────
