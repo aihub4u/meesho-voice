@@ -1,4 +1,3 @@
-// Run: node setup.js  — creates all backend files
 import fs from "fs";
 import path from "path";
 
@@ -358,8 +357,9 @@ const allowed = [
 
 app.use(cors({
   origin: (origin, cb) => {
-    if (!origin || allowed.includes(origin)) return cb(null, true);
-    if (/\\.github\\.io$/.test(origin))         return cb(null, true);
+    // Allow: no origin (curl/Postman), null origin (local file://), listed origins, github.io
+    if (!origin || origin === 'null' || allowed.includes(origin)) return cb(null, true);
+    if (/\\.github\\.io$/.test(origin)) return cb(null, true);
     cb(new Error(\`CORS blocked: \${origin}\`));
   },
   credentials: true,
@@ -1985,4 +1985,4 @@ for (const [fpath, content] of Object.entries(FILES)) {
   fs.writeFileSync(fpath, content);
   console.log("✓", fpath);
 }
-console.log("\n✅ All files created. Run: cd backend && npm install && npm run dev");
+console.log("\n✅ All files created.");
