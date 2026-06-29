@@ -1420,6 +1420,39 @@ router.post("/call", async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
+// ── GET /api/twilio/trigger ──────────────────────────────────────────────────
+// Browser-friendly GET endpoint — accepts all params as query string
+// Allows calling from local HTML files without CORS preflight issues
+router.get("/trigger", async (req, res, next) => {
+  try {
+    const { to, flowId = "meesho-pickup", customer_name, store_name, pickup_timings, ...rest } = req.query;
+    if (!to) return res.status(400).json({ error: "to (phone number) required" });
+
+    const flow = flows?.get(flowId);
+    if (!flow) return res.status(404).json({ error: \`Flow "\${flowId}" not found\` });
+
+    const client     = getTwilioClient();
+    const backendUrl = process.env.BACKEND_URL || \`https://\${req.headers.host}\`;
+    const variables  = { customer_name, store_name, pickup_timings, ...rest };
+    const varsB64    = Buffer.from(JSON.stringify(variables)).toString("base64");
+    const twimlUrl   = \`\${backendUrl}/api/twilio/twiml?flowId=\${flowId}&vars=\${encodeURIComponent(varsB64)}\`;
+
+    const call = await client.calls.create({
+      to,
+      from:                process.env.TWILIO_PHONE_NUMBER,
+      url:                 twimlUrl,
+      statusCallback:      \`\${backendUrl}/api/twilio/status\`,
+      statusCallbackMethod:"POST",
+    });
+
+    console.log(\`[Twilio] GET trigger | to=\${to} | sid=\${call.sid} | flow=\${flowId}\`);
+
+    // Set CORS header explicitly for local file:// origins
+    res.setHeader("Access-Control-Allow-Origin", "*");
+    res.json({ callSid: call.sid, status: call.status, to, flowId });
+  } catch (e) { next(e); }
+});
+
 // ── POST /api/twilio/campaign ─────────────────────────────────────────────────
 // Dial all contacts in a CSV batch, each gets their personalised bot flow.
 // Body: { contacts: [{ phone_number, customer_name, store_name, pickup_timings }], flowId }
