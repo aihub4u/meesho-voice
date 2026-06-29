@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8"/>
+<title>Test Bot Call</title>
+<style>
+  body{font-family:system-ui;max-width:500px;margin:60px auto;padding:20px;background:#f5f5f5;}
+  .card{background:#fff;border-radius:12px;padding:28px;box-shadow:0 2px 12px rgba(0,0,0,.1);}
+  h2{margin:0 0 20px;font-size:18px;color:#1a1a1a;}
+  label{font-size:12px;font-weight:600;color:#666;display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:.04em;}
+  input,select{width:100%;padding:10px 12px;border:1.5px solid #ddd;border-radius:8px;font-size:14px;margin-bottom:14px;box-sizing:border-box;outline:none;}
+  input:focus,select:focus{border-color:#5B3FE8;}
+  button{width:100%;padding:13px;background:#5B3FE8;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;}
+  button:hover{background:#3D29B5;}
+  button:disabled{background:#aaa;cursor:not-allowed;}
+  .result{margin-top:16px;padding:12px 14px;border-radius:8px;font-size:13px;font-family:monospace;display:none;white-space:pre-wrap;word-break:break-all;}
+  .result.ok{background:#E1F5EE;color:#0F6E56;border:1px solid #9FE1CB;}
+  .result.err{background:#FEE2E2;color:#B91C1C;border:1px solid #FECACA;}
+</style>
+</head>
+<body>
+<div class="card">
+  <h2>🤖 Trigger bot test call</h2>
+
+  <label>Backend URL</label>
+  <input id="backend" value="https://meesho-voice-api.onrender.com"/>
+
+  <label>Phone number to call</label>
+  <input id="phone" value="+918660467356" placeholder="+91XXXXXXXXXX"/>
+
+  <label>Customer name</label>
+  <input id="name" value="Raj"/>
+
+  <label>Store name</label>
+  <input id="store" value="Lajpat Nagar Store"/>
+
+  <label>Pickup timings</label>
+  <input id="timings" value="10am to 6pm"/>
+
+  <label>Flow</label>
+  <select id="flow">
+    <option value="meesho-pickup">Meesho pickup (Hindi)</option>
+    <option value="meesho-pickup-en">Meesho pickup (English)</option>
+  </select>
+
+  <button id="btn" onclick="triggerCall()">📞 Call now</button>
+  <div class="result" id="result"></div>
+</div>
+
+<script>
+async function triggerCall() {
+  const btn    = document.getElementById('btn');
+  const result = document.getElementById('result');
+  const backend = document.getElementById('backend').value.trim().replace(/\/$/, '');
+
+  btn.disabled = true;
+  btn.textContent = 'Calling…';
+  result.style.display = 'none';
+
+  try {
+    const res = await fetch(backend + '/api/twilio/call', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        to:      document.getElementById('phone').value.trim(),
+        flowId:  document.getElementById('flow').value,
+        variables: {
+          customer_name:  document.getElementById('name').value.trim(),
+          store_name:     document.getElementById('store').value.trim(),
+          pickup_timings: document.getElementById('timings').value.trim(),
+        }
+      })
+    });
+
+    const data = await res.json();
+    result.style.display = 'block';
+
+    if (res.ok) {
+      result.className = 'result ok';
+      result.textContent = '✓ Call initiated!\n\n' + JSON.stringify(data, null, 2);
+      btn.textContent = '✓ Called! Your phone will ring shortly';
+    } else {
+      result.className = 'result err';
+      result.textContent = '✕ Error:\n\n' + JSON.stringify(data, null, 2);
+      btn.disabled = false;
+      btn.textContent = '📞 Call now';
+    }
+  } catch(e) {
+    result.style.display = 'block';
+    result.className = 'result err';
+    result.textContent = '✕ Network error: ' + e.message + '\n\nMake sure the backend URL is correct and reachable.';
+    btn.disabled = false;
+    btn.textContent = '📞 Call now';
+  }
+}
+</script>
+</body>
+</html>
