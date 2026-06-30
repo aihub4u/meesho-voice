@@ -663,14 +663,15 @@ router.post("/call", async (req, res, next) => {
     form.append("StatusCallback", \`\${backendUrl}/api/exotel/status\`);
     form.append("StatusCallbackEvents[0]", "terminal");
 
-    const url = \`https://\${apiKey}:\${apiToken}@\${subdomain}/v1/Accounts/\${accountSid}/Calls/connect\`;
+    const url  = \`https://\${subdomain}/v1/Accounts/\${accountSid}/Calls/connect\`;
+    const auth = Buffer.from(\`\${apiKey}:\${apiToken}\`).toString("base64");
 
     console.log(\`[Exotel] Outbound call | to=\${to} | flow=\${flowId}\`);
 
     const resp = await fetch(url, {
       method:  "POST",
       body:    form,
-      headers: form.getHeaders(),
+      headers: { ...form.getHeaders(), Authorization: \`Basic \${auth}\` },
     });
 
     const data = await resp.json().catch(() => ({}));
@@ -712,12 +713,13 @@ router.get("/trigger", async (req, res, next) => {
     form.append("StatusCallback", \`\${backendUrl}/api/exotel/status\`);
     form.append("StatusCallbackEvents[0]", "terminal");
 
-    const url = \`https://\${apiKey}:\${apiToken}@\${subdomain}/v1/Accounts/\${accountSid}/Calls/connect\`;
+    const url  = \`https://\${subdomain}/v1/Accounts/\${accountSid}/Calls/connect\`;
+    const auth = Buffer.from(\`\${apiKey}:\${apiToken}\`).toString("base64");
 
     const resp = await fetch(url, {
       method:  "POST",
       body:    form,
-      headers: form.getHeaders(),
+      headers: { ...form.getHeaders(), Authorization: \`Basic \${auth}\` },
     });
 
     const data = await resp.json().catch(() => ({}));
