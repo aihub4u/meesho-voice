@@ -656,25 +656,31 @@ router.post("/call", async (req, res, next) => {
     const streamUrl = \`\${backendUrl.replace(/^https?/, "wss")}/ws/exotel?vars=\${encodeURIComponent(varsB64)}\`;
 
     // Exotel outbound call with AgentStream (bidirectional WebSocket)
-    const form = new FormData();
-    form.append("From",           to);
-    form.append("CallerId",       exophone);
-    form.append("Url",            \`\${backendUrl}/api/exotel/applet?flowId=\${flowId}&vars=\${encodeURIComponent(varsB64)}\`);
-    form.append("StatusCallback", \`\${backendUrl}/api/exotel/status\`);
-    form.append("StatusCallbackEvents[0]", "terminal");
+    const params = new URLSearchParams();
+    params.append("From",           to);
+    params.append("CallerId",       exophone);
+    params.append("Url",            \`\${backendUrl}/api/exotel/applet?flowId=\${flowId}&vars=\${encodeURIComponent(varsB64)}\`);
+    params.append("StatusCallback", \`\${backendUrl}/api/exotel/status\`);
+    params.append("StatusCallbackEvents[0]", "terminal");
 
     const url  = \`https://\${subdomain}/v1/Accounts/\${accountSid}/Calls/connect\`;
     const auth = Buffer.from(\`\${apiKey}:\${apiToken}\`).toString("base64");
 
-    console.log(\`[Exotel] Outbound call | to=\${to} | flow=\${flowId}\`);
+    console.log(\`[Exotel] Outbound call | to=\${to} | flow=\${flowId} | url=\${url}\`);
 
     const resp = await fetch(url, {
       method:  "POST",
-      body:    form,
-      headers: { ...form.getHeaders(), Authorization: \`Basic \${auth}\` },
+      body:    params,
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+        Authorization:  \`Basic \${auth}\`,
+      },
     });
 
-    const data = await resp.json().catch(() => ({}));
+    const rawText = await resp.text();
+    console.log(\`[Exotel] Response \${resp.status}: \${rawText.slice(0, 500)}\`);
+    let data = {};
+    try { data = JSON.parse(rawText); } catch(_) { data = { raw: rawText }; }
 
     if (!resp.ok) {
       throw new Error(\`Exotel \${resp.status}: \${JSON.stringify(data)}\`);
@@ -706,23 +712,31 @@ router.get("/trigger", async (req, res, next) => {
     const variables = { customer_name, store_name, pickup_timings, flowId };
     const varsB64   = Buffer.from(JSON.stringify(variables)).toString("base64");
 
-    const form = new FormData();
-    form.append("From",           to);
-    form.append("CallerId",       exophone);
-    form.append("Url",            \`\${backendUrl}/api/exotel/applet?flowId=\${flowId}&vars=\${encodeURIComponent(varsB64)}\`);
-    form.append("StatusCallback", \`\${backendUrl}/api/exotel/status\`);
-    form.append("StatusCallbackEvents[0]", "terminal");
+    const params = new URLSearchParams();
+    params.append("From",           to);
+    params.append("CallerId",       exophone);
+    params.append("Url",            \`\${backendUrl}/api/exotel/applet?flowId=\${flowId}&vars=\${encodeURIComponent(varsB64)}\`);
+    params.append("StatusCallback", \`\${backendUrl}/api/exotel/status\`);
+    params.append("StatusCallbackEvents[0]", "terminal");
 
     const url  = \`https://\${subdomain}/v1/Accounts/\${accountSid}/Calls/connect\`;
     const auth = Buffer.from(\`\${apiKey}:\${apiToken}\`).toString("base64");
 
+    console.log(\`[Exotel] GET trigger | to=\${to} | url=\${url}\`);
+
     const resp = await fetch(url, {
       method:  "POST",
-      body:    form,
-      headers: { ...form.getHeaders(), Authorization: \`Basic \${auth}\` },
+      body:    params,
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+        Authorization:  \`Basic \${auth}\`,
+      },
     });
 
-    const data = await resp.json().catch(() => ({}));
+    const rawText = await resp.text();
+    console.log(\`[Exotel] Response \${resp.status}: \${rawText.slice(0, 500)}\`);
+    let data = {};
+    try { data = JSON.parse(rawText); } catch(_) { data = { raw: rawText }; }
 
     res.setHeader("Access-Control-Allow-Origin", "*");
 
